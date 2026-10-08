@@ -1,4 +1,4 @@
-const CACHE = 'mnsn-v1';
+const CACHE = 'mnsn-v2';
 const FILES = [
   './', './index.html', './manifest.webmanifest',
   './icone/logo.png', './icone/icona-192.png', './icone/icona-512.png', './icone/icona-180.png',
