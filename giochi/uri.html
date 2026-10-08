@@ -294,6 +294,16 @@ body{padding:0 12px 28px}
 .score-bar{width:100%!important;max-width:460px;font-size:15px!important}
 .btn-print,.tablet-deco{display:none!important}
 }</style>
+<style id="app-voice">
+.ask{min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;font-size:18px;color:#5a2e0a}
+.big-num{font-size:46px;font-weight:bold;color:#3a1a00;line-height:1}
+.calc{font-size:15px;color:#7a3e1a}
+.acts{display:flex;gap:10px;width:100%}
+.acts .btn{flex:1}
+.btn.big{height:56px;font-size:18px;border-radius:14px;padding:0}
+.j-ok{background:#2e7d32;color:#fff}
+.j-no{background:#c62828;color:#fff}
+</style>
 </head>
 <body>
 
@@ -326,12 +336,9 @@ body{padding:0 12px 28px}
 
 <!-- AREA RISPOSTA -->
 <div class="answer-area">
-  <label for="ans">Che numero è?</label>
-  <input type="number" id="ans" min="1" max="99" placeholder="?" disabled>
-  <div class="feedback" id="feedback"></div>
-  <div style="display:flex;gap:12px;">
-    <button class="btn btn-check" id="btnCheck" onclick="checkAnswer()" disabled>✔ Controlla</button>
-    <button class="btn btn-next" onclick="newCard()">🎲 Nuova carta</button>
+  <div class="ask" id="ask">Premi «Nuova carta» per iniziare!</div>
+  <div class="acts" id="acts">
+    <button class="btn btn-next big" onclick="newCard()">🎲 Nuova carta</button>
   </div>
 </div>
 
@@ -396,73 +403,47 @@ body{padding:0 12px 28px}
   drawBall(document.getElementById('leg-ball'), 32);
   drawCone(document.getElementById('leg-cone'), 32, 44);
 
-  // ------- GIOCO -------
-  let correct = 0, total = 0, currentNum = 0, answered = false;
+  // ------- GIOCO (risposta a voce) -------
+  let correct = 0, total = 0, currentNum = 0;
+  function setActs(html) { document.getElementById('acts').innerHTML = html; }
 
   function newCard() {
-    answered = false;
-    document.getElementById('feedback').textContent = '';
-    document.getElementById('feedback').className = 'feedback';
-    const ans = document.getElementById('ans');
-    ans.value = '';
-    ans.disabled = false;
-    document.getElementById('btnCheck').disabled = false;
-    ans.focus();
-
-    // genera numero da 1 a 99 (max 9 coni + max 9 palline = 99)
     currentNum = Math.floor(Math.random() * 99) + 1;
     const balls = Math.floor(currentNum / 10);
     const cones = currentNum % 10;
-
     const card = document.getElementById('card');
     card.innerHTML = '';
-
     const row = document.createElement('div');
     row.className = 'shapes-row';
-
     for (let i = 0; i < balls; i++) {
       const c = document.createElement('canvas');
-      c.className = 'shape';
-      c.width = 44; c.height = 44;
-      drawBall(c, 44);
-      row.appendChild(c);
+      c.className = 'shape'; c.width = 44; c.height = 44;
+      drawBall(c, 44); row.appendChild(c);
     }
     for (let i = 0; i < cones; i++) {
       const c = document.createElement('canvas');
-      c.className = 'shape';
-      c.width = 38; c.height = 56;
-      drawCone(c, 38, 56);
-      row.appendChild(c);
+      c.className = 'shape'; c.width = 38; c.height = 56;
+      drawCone(c, 38, 56); row.appendChild(c);
     }
-
     card.appendChild(row);
-    total++;
-    document.getElementById('scoreTotal').textContent = `Carte: ${total}`;
+    document.getElementById('ask').innerHTML = 'Che numero è? <b>Dillo ad alta voce!</b>';
+    setActs('<button class="btn btn-check big" onclick="checkAnswer()">👀 Controlla</button>');
   }
 
   function checkAnswer() {
-    if (answered) return;
-    const val = parseInt(document.getElementById('ans').value);
-    const fb = document.getElementById('feedback');
-    if (isNaN(val)) { fb.textContent = 'Scrivi un numero!'; fb.className='feedback no'; return; }
-    answered = true;
-    document.getElementById('ans').disabled = true;
-    document.getElementById('btnCheck').disabled = true;
-    if (val === currentNum) {
-      fb.textContent = '🌟 Esatto!';
-      fb.className = 'feedback ok';
-      correct++;
-      document.getElementById('scoreGood').textContent = `✅ Corrette: ${correct}`;
-    } else {
-      fb.textContent = `❌ Era ${currentNum}. Riprova!`;
-      fb.className = 'feedback no';
-    }
+    const b = Math.floor(currentNum / 10), c = currentNum % 10, parts = [];
+    if (b) parts.push(b + (b === 1 ? ' sfera' : ' sfere') + ' = ' + (b * 10));
+    if (c) parts.push(c + (c === 1 ? ' cono' : ' coni') + ' = ' + c);
+    document.getElementById('ask').innerHTML = '<span class="big-num">' + currentNum + '</span><span class="calc">' + parts.join(' &nbsp;+&nbsp; ') + '</span>';
+    setActs('<button class="btn j-ok big" onclick="judge(true)">✓ Giusto</button><button class="btn j-no big" onclick="judge(false)">✗ Sbagliato</button>');
   }
 
-  // Enter per controllare
-  document.getElementById('ans').addEventListener('keydown', e => {
-    if (e.key === 'Enter') checkAnswer();
-  });
+  function judge(ok) {
+    total++; if (ok) correct++;
+    document.getElementById('scoreGood').textContent = '✅ Corrette: ' + correct;
+    document.getElementById('scoreTotal').textContent = 'Carte: ' + total;
+    newCard();
+  }
 
   // ------- STAMPA SCHEDE (senza soluzioni) -------
   function stampaSchede(numCarte = 21) {

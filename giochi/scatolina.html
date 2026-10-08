@@ -68,6 +68,12 @@ canvas+button{width:100%!important;max-width:520px;height:56px;padding:0!importa
 .answer-row button{height:56px;padding:0 24px!important;font-size:1.2rem!important;border-radius:14px!important}
 .feedback{font-size:1.15rem!important}
 }</style>
+<style id="app-voice">
+.answer-row button{min-width:240px;height:56px;font-size:1.25rem!important;border-radius:14px!important}
+.judge-row{display:flex;gap:10px;margin-top:12px;width:100%;max-width:520px;justify-content:center}
+.judge-row button{flex:1;max-width:250px;height:56px;border:none;border-radius:14px;color:#fff;font:bold 1.25rem Georgia,serif;font-variant:small-caps;cursor:pointer}
+.j-ok{background:#2e7d32}.j-no{background:#c03030}
+</style>
 </head>
 <body>
 
@@ -99,8 +105,11 @@ canvas+button{width:100%!important;max-width:520px;height:56px;padding:0!importa
 <div class="info" id="info">Premi "Scuoti" per iniziare!</div>
 <div class="question" id="question"></div>
 <div class="answer-row" id="answerRow" style="display:none">
-  <input type="number" id="answerInput" min="0" max="20" placeholder="?">
-  <button onclick="controlla()">Conferma</button>
+  <button onclick="controlla()">👀 Controlla</button>
+</div>
+<div class="judge-row" id="judgeRow" style="display:none">
+  <button class="j-ok" onclick="giudica(true)">✓ Giusto</button>
+  <button class="j-no" onclick="giudica(false)">✗ Sbagliato</button>
 </div>
 <div class="feedback" id="feedback"></div>
 <div class="score" id="score">Risposte Corrette: 0 / 0</div>
@@ -135,7 +144,7 @@ function nuovaPartita(){
   phase='idle'; rightOpen=false; leftOpen=false; shaking=false;
   document.getElementById('info').textContent='Premi "Scuoti" per iniziare!';
   document.getElementById('question').textContent='';
-  document.getElementById('answerRow').style.display='none';
+  document.getElementById('answerRow').style.display='none';document.getElementById('judgeRow').style.display='none';
   document.getElementById('feedback').textContent='';
   document.getElementById('feedback').className='feedback';
   distribBalls(Math.floor(Math.random()*(totalBalls+1)));
@@ -219,7 +228,7 @@ function roundRect(ctx,x,y,w,h,r){
 function scuoti(){
   if(shaking)return;
   phase='shaking';rightOpen=false;leftOpen=false;
-  document.getElementById('answerRow').style.display='none';
+  document.getElementById('answerRow').style.display='none';document.getElementById('judgeRow').style.display='none';
   document.getElementById('question').textContent='';
   document.getElementById('feedback').textContent='';
   document.getElementById('feedback').className='feedback';
@@ -237,24 +246,25 @@ canvas.addEventListener('click',e=>{
   if(mx<DIVIDER){leftOpen=true;rightOpen=false;openSide='left';}
   else{rightOpen=true;leftOpen=false;openSide='right';}
   const visibili=openSide==='left'?ballsLeft:ballsRight;
-  document.getElementById('info').textContent=`Vedi ${visibili} pallina${visibili!==1?'e':''} → Quante sono nell'altro lato?`;
+  document.getElementById('info').textContent=`Vedi ${visibili} pallina${visibili!==1?'e':''} → Quante sono nell'altro lato? Dillo ad alta voce!`;
   document.getElementById('question').textContent=`${visibili} + ? = ${totalBalls}`;
   document.getElementById('answerRow').style.display='flex';
-  document.getElementById('answerInput').value='';
-  document.getElementById('answerInput').focus();
-  phase='answer';draw();
+    phase='answer';draw();
 });
 
 function controlla(){
-  const ans=parseInt(document.getElementById('answerInput').value);
-  const nascoste=openSide==='left'?ballsRight:ballsLeft;
-  total++;
-  const fb=document.getElementById('feedback');
-  if(ans===nascoste){correct++;fb.textContent=`✅ Esatto! ${nascoste} palline nell'altro lato.`;fb.className='feedback ok';}
-  else{fb.textContent=`❌ Sbagliato! Erano ${nascoste}. (${openSide==='left'?ballsLeft:ballsRight} + ${nascoste} = ${totalBalls})`;fb.className='feedback no';}
-  aggiornaPunteggio();leftOpen=true;rightOpen=true;draw();phase='idle';
-  document.getElementById('answerRow').style.display='none';
-  document.getElementById('info').textContent='Premi "Scuoti" per un nuovo turno!';
+  const nascoste=openSide==='left'?ballsRight:ballsLeft, vis=totalBalls-nascoste;
+  leftOpen=true;rightOpen=true;phase='judge';draw();
+  document.getElementById('question').textContent=vis+' + '+nascoste+' = '+totalBalls;
+  document.getElementById('info').textContent="Dall'altra parte ce n'erano "+nascoste+". L'avevi detto giusto?";
+  document.getElementById('answerRow').style.display='none';document.getElementById('judgeRow').style.display='none';
+  document.getElementById('judgeRow').style.display='flex';
+}
+
+function giudica(ok){
+  total++; if(ok) correct++; aggiornaPunteggio();
+  document.getElementById('judgeRow').style.display='none';
+  scuoti();
 }
 
 function aggiornaPunteggio(){document.getElementById('score').textContent=`Risposte Corrette: ${correct} / ${total}`;}
