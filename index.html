@@ -55,6 +55,14 @@ iframe{flex:1;width:100%;border:0;background:#fff;display:block}
 .sh .tile{width:60px;height:60px;border-radius:14px;font-size:30px}
 .sheet p{margin:0;font-size:16px;line-height:1.55;color:#4a3820}
 .play{height:54px;border-radius:16px;background:#3a2e1e;color:#fffdf7;font:700 20px/54px 'Baloo 2',sans-serif;text-align:center}
+.install{display:none;align-items:center;gap:12px;margin:0 0 18px;padding:12px 12px 12px 16px;background:#3a2e1e;color:#fffdf7;border-radius:18px}
+.install.on{display:flex}
+.install span{flex:1;font-size:14px;line-height:1.35}
+.install b{display:block;font:700 18px/1.1 'Baloo 2',sans-serif}
+.install button{flex:none;height:44px;padding:0 18px;border-radius:12px;background:#e8c030;color:#3a2e1e;font-weight:600}
+.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;counter-reset:s}
+.steps li{display:flex;gap:12px;align-items:flex-start;font-size:16px;line-height:1.4;color:#4a3820}
+.steps li::before{counter-increment:s;content:counter(s);flex:none;width:28px;height:28px;border-radius:50%;background:#e8c030;color:#3a2e1e;font-weight:700;display:grid;place-items:center;font-size:14px}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
 </style>
@@ -69,6 +77,16 @@ iframe{flex:1;width:100%;border:0;background:#fff;display:block}
   </header>
   <main class="grid" id="grid"></main>
   <footer class="foot"><a href="https://matematichenonsinasce.com/" target="_blank" rel="noopener">Leggi il blog → matematichenonsinasce.com</a></footer>
+</div>
+
+<div class="shade" id="iShade" style="position:fixed;z-index:10">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sh"><img src="icone/icona-180.png" alt="" style="width:60px;height:60px;border-radius:14px"><div class="txt"><span class="tag" style="color:#8a7650">Installa l'app</span><span class="name" id="iTitle">Su iPhone e iPad</span></div></div>
+    <ol class="steps" id="iSteps"></ol>
+    <button class="play" id="iNow" style="display:none;background:#2e7d32">📲 Installa ora</button>
+    <button class="play" id="iClose">Ho capito</button>
+  </div>
 </div>
 
 <div class="game" id="game">
@@ -152,6 +170,39 @@ $('rulesBtn').onclick = () => $('shade').classList.add('on');
 $('play').onclick = () => $('shade').classList.remove('on');
 $('shade').onclick = e => { if (e.target === $('shade')) $('shade').classList.remove('on'); };
 if (location.hash) show(location.hash.slice(1), true);
+
+// ---- Installazione ----
+const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isMobile = isIOS || /Android/i.test(navigator.userAgent);
+let deferred = null;
+const STEPS = {
+  ios: ['Tocca il tasto <b>Condividi</b> di Safari (il quadrato con la freccia in su; se non lo vedi, prima i <b>⋯</b>).',
+        'Scorri e scegli <b>Aggiungi alla schermata Home</b>.',
+        'Tocca <b>Aggiungi</b>: l\'icona comparirà tra le tue app.'],
+  android: ['Tocca il menu <b>⋮</b> di Chrome in alto a destra.',
+            'Scegli <b>Installa app</b> (o <b>Aggiungi a schermata Home</b>).',
+            'Conferma con <b>Installa</b>.'],
+  desktop: ['Apri questo indirizzo <b>dal telefono o dal tablet</b>:<br><b style="word-break:break-all">' + location.origin + location.pathname + '</b>',
+            'Poi tocca <b>Installa</b> nel riquadro in alto.']
+};
+function openSteps() {
+  const k = isIOS ? 'ios' : isMobile ? 'android' : 'desktop';
+  $('iTitle').textContent = k === 'ios' ? 'Su iPhone e iPad' : k === 'android' ? 'Su Android' : 'Sul telefono';
+  $('iSteps').innerHTML = STEPS[k].map(s => '<li><span>' + s + '</span></li>').join('');
+  $('iShade').classList.add('on');
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; });
+window.addEventListener('beforeinstallprompt', () => { $('iNow').style.display = ''; });
+window.addEventListener('appinstalled', () => $('iShade').classList.remove('on'));
+$('iNow').onclick = async () => {
+  if (!deferred) return;
+  deferred.prompt(); await deferred.userChoice; deferred = null;
+  $('iShade').classList.remove('on');
+};
+$('iClose').onclick = () => $('iShade').classList.remove('on');
+$('iShade').onclick = e => { if (e.target === $('iShade')) $('iShade').classList.remove('on'); };
+if (!isStandalone && new URLSearchParams(location.search).has('installa')) setTimeout(openSteps, 600);
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
