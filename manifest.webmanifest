@@ -1,0 +1,16 @@
+{
+  "name": "Matematiche Non Si Nasce",
+  "short_name": "Mate Giochi",
+  "description": "Cinque giochi per scoprire i numeri giocando.",
+  "lang": "it",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5f0e8",
+  "theme_color": "#f5f0e8",
+  "icons": [
+    { "src": "icone/icona-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icone/icona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

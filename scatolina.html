@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,serif;font-variant:small-caps;background:#f5f0e8;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:20px;color:#3a2e1e;width:100%}
+h1{font-size:1.3rem;margin-bottom:12px;color:#7a5c2e;letter-spacing:2px;font-variant:small-caps}
+.controls{display:flex;align-items:center;gap:10px;margin-bottom:16px;background:#e8dfc8;padding:10px 18px;border-radius:12px;border:1px solid #c8b89a}
+.controls label{font-size:14px;color:#5a4020;font-variant:small-caps}
+.controls input{width:60px;padding:4px 8px;border-radius:6px;border:1px solid #c8b89a;font-size:14px;text-align:center;background:#fffdf7;color:#3a2e1e;font-family:Georgia,serif;font-variant:small-caps}
+.controls button{padding:6px 16px;border-radius:8px;border:1px solid #b8960a;background:#e8c030;color:#4a3800;font-weight:bold;cursor:pointer;font-size:14px;font-family:Georgia,serif;font-variant:small-caps}
+.controls button:hover{background:#f0d050}
+canvas{border-radius:16px;cursor:pointer;border:2px solid #c8b89a;width:100%;max-width:520px;height:auto;display:block}
+#counts{display:flex;justify-content:space-around;width:100%;max-width:520px;margin:18px auto 0;font-size:1rem;font-weight:bold;min-height:24px;font-variant:small-caps}
+.info{margin-top:14px;font-size:1rem;min-height:28px;color:#7a5c2e;text-align:center;font-variant:small-caps}
+.question{margin-top:8px;font-size:1.2rem;color:#3a2e1e;text-align:center;min-height:28px;font-variant:small-caps}
+.answer-row{display:flex;gap:8px;margin-top:10px;align-items:center;justify-content:center}
+.answer-row input{width:70px;padding:6px 10px;border-radius:8px;border:1px solid #c8b89a;font-size:1.1rem;text-align:center;background:#fffdf7;color:#3a2e1e;font-family:Georgia,serif;font-variant:small-caps}
+.answer-row button{padding:6px 16px;border-radius:8px;border:1px solid #2e8a70;background:#4ab090;color:#fff;font-weight:bold;cursor:pointer;font-size:1rem;font-family:Georgia,serif;font-variant:small-caps}
+.answer-row button:hover{background:#3a9a80}
+.feedback{margin-top:8px;font-size:1.1rem;min-height:26px;text-align:center;font-variant:small-caps}
+.feedback.ok{color:#2e7a50}
+.feedback.no{color:#c03030}
+.score{margin-top:8px;font-size:0.9rem;color:#7a6040;font-variant:small-caps}
+.print-controls{display:flex;align-items:center;gap:10px;margin-top:18px;margin-bottom:22px;background:#e8dfc8;padding:10px 18px;border-radius:12px;border:1px solid #c8b89a}
+.print-controls label{font-size:14px;color:#5a4020;font-variant:small-caps}
+.print-controls input{width:60px;padding:4px 8px;border-radius:6px;border:1px solid #c8b89a;font-size:14px;text-align:center;background:#fffdf7;color:#3a2e1e;font-family:Georgia,serif;font-variant:small-caps}
+.print-controls button{padding:6px 16px;border-radius:8px;border:1px solid #7a5c2e;background:#c8a850;color:#3a2200;font-weight:bold;cursor:pointer;font-size:14px;font-family:Georgia,serif;font-variant:small-caps}
+.print-controls button:hover{background:#d8ba60}
+#printSheet{display:none}
+@media print{
+  @page{size:A4;margin:8mm}
+  html,body{background:#fff!important}
+  body>*:not(#printSheet){display:none!important}
+  #printSheet{display:block!important;background:#fff!important}
+  .print-card{page-break-inside:avoid;break-inside:avoid;border:1px solid #c8b89a;border-radius:10px;padding:8px;box-sizing:border-box;background:#fff!important;margin-bottom:16px;width:100%;display:block}
+  .print-card-header{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+  .print-logo{width:26px;height:26px;object-fit:contain;border-radius:50%}
+  .print-title{font-family:Georgia,serif;font-variant:small-caps;font-size:0.78rem;color:#7a5c2e;font-weight:bold}
+  .print-total{font-family:Georgia,serif;font-variant:small-caps;font-size:0.68rem;color:#4a3820;margin-bottom:3px}
+  .print-grid{column-count:2;column-gap:22px;background:#fff!important}
+}
+</style>
+<style id="app-mobile">
+a[href*="matematichenonsinasce"]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent}
+button,select,input{touch-action:manipulation}
+@media (hover:none){*:hover{transform:none!important}}
+
+h1{display:none!important}
+@media (max-width:767px){
+body{padding:12px 12px 28px!important}
+.print-controls,body>div[style*="max-width:480px"]{display:none!important}
+body>div[style*="text-align:center"]:first-child{display:none!important}
+.controls{width:100%;justify-content:space-between;padding:8px 12px!important;margin-bottom:12px!important}
+.controls input{width:64px!important;height:44px;font-size:18px!important}
+.controls button{height:44px;padding:0 16px!important;font-size:16px!important}
+canvas{border-radius:14px!important}
+canvas+button{width:100%!important;max-width:520px;height:56px;padding:0!important;font-size:1.4rem!important;border-radius:16px!important;margin-top:14px!important}
+#counts{font-size:1.3rem!important}
+.info{font-size:1.05rem!important}
+.question{font-size:1.8rem!important;margin-top:12px!important}
+.answer-row{width:100%;max-width:520px}
+.answer-row input{flex:1;width:auto!important;height:56px;font-size:1.6rem!important;border-radius:14px!important}
+.answer-row button{height:56px;padding:0 24px!important;font-size:1.2rem!important;border-radius:14px!important}
+.feedback{font-size:1.15rem!important}
+}</style>
+</head>
+<body>
+
+<div style="text-align:center;margin-bottom:16px">
+  <a href="https://matematichenonsinasce.com/"  style="text-decoration:none;display:inline-flex;flex-direction:column;align-items:center;gap:8px">
+    <img src="https://raw.githubusercontent.com/rdiianni-alt/quiz-matematica-prima/fca31cdfe65286a5abbf269e23429e4ddc479c78/logo.png" alt="Logo" style="width:60px;height:60px;object-fit:contain;border-radius:50%">
+    <span style="font-size:1rem;font-weight:bold;color:#7a5c2e;letter-spacing:1px;font-variant:small-caps">Matematiche Non Si Nasce</span>
+  </a>
+</div>
+
+<h1>🎲 Scatolina Gialla</h1>
+<div class="controls">
+  <label>Palline (1–20):</label>
+  <input type="number" id="numInput" min="1" max="20" value="20">
+  <button onclick="nuovaPartita()">Nuova Partita</button>
+</div>
+<div class="print-controls">
+  <label>Scatoline da stampare:</label>
+  <input type="number" id="numCards" min="1" max="20" value="8">
+  <label>Totale palline:</label>
+  <select id="printTotal">
+    <option value="10">10</option>
+    <option value="20" selected>20</option>
+  </select>
+  <button onclick="generaScheda()">🖨️ Stampa Scheda PDF</button>
+</div>
+<canvas id="c" width="520" height="240"></canvas>
+<div id="counts"></div>
+<div class="info" id="info">Premi "Scuoti" per iniziare!</div>
+<div class="question" id="question"></div>
+<div class="answer-row" id="answerRow" style="display:none">
+  <input type="number" id="answerInput" min="0" max="20" placeholder="?">
+  <button onclick="controlla()">Conferma</button>
+</div>
+<div class="feedback" id="feedback"></div>
+<div class="score" id="score">Risposte Corrette: 0 / 0</div>
+<div style="max-width:480px;width:100%;margin:24px auto 0;background:#e8dfc8;border:1px solid #c8b89a;border-radius:12px;padding:16px 20px;font-size:0.95rem;line-height:1.6;color:#4a3820;font-variant:small-caps;box-sizing:border-box">
+  <strong style="font-size:1.05rem;color:#7a5c2e">Regole Del Gioco</strong><br><br>
+  Scuoti la scatolina, apri uno sportello e conta le palline visibili. Quante sono rimaste nell'altro lato? Un modo semplice per scoprire le decomposizioni del numero: gli amici del 10, del 20, o di qualsiasi numero scelto.
+</div>
+
+<div id="printSheet" class="print-grid"></div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const BOX_W = W - 40, BOX_H = H - 40;
+const BX = 20, BY = 20;
+const DIVIDER = BX + BOX_W / 2;
+const BALL_R = 11;
+const BOX_COLOR = '#e8c030';
+const BOX_DARK = '#b8960a';
+const ROOM_L_COLOR = '#fffbf0';
+const ROOM_R_COLOR = '#fff8e8';
+const BALL_COLOR = '#e53935';
+const BALL_SHINE = '#ff8a80';
+
+let totalBalls=20,ballsLeft=0,ballsRight=0,rightOpen=false,leftOpen=false,shaking=false,balls=[],phase='idle',correct=0,total=0,openSide='';
+
+function nuovaPartita(){
+  let n=parseInt(document.getElementById('numInput').value);
+  if(isNaN(n)||n<1)n=1; if(n>20)n=20;
+  totalBalls=n; correct=0; total=0; aggiornaPunteggio();
+  phase='idle'; rightOpen=false; leftOpen=false; shaking=false;
+  document.getElementById('info').textContent='Premi "Scuoti" per iniziare!';
+  document.getElementById('question').textContent='';
+  document.getElementById('answerRow').style.display='none';
+  document.getElementById('feedback').textContent='';
+  document.getElementById('feedback').className='feedback';
+  distribBalls(Math.floor(Math.random()*(totalBalls+1)));
+  draw();
+}
+
+function distribBalls(left){ballsLeft=left;ballsRight=totalBalls-left;placeBalls()}
+
+function placeBalls(){
+  balls=[];
+  const lx1=BX+BALL_R+6,lx2=DIVIDER-BALL_R-6,ry1=BY+BALL_R+6,ry2=BY+BOX_H-BALL_R-6;
+  for(let i=0;i<ballsLeft;i++) balls.push({side:'L',x:rand(lx1,lx2),y:rand(ry1,ry2)});
+  const rx1=DIVIDER+BALL_R+6,rx2=BX+BOX_W-BALL_R-6;
+  for(let i=0;i<ballsRight;i++) balls.push({side:'R',x:rand(rx1,rx2),y:rand(ry1,ry2)});
+  settleBalls();
+}
+
+function rand(a,b){return a+Math.random()*(b-a)}
+
+function settleBalls(){
+  const floors={L:{x1:BX+4,x2:DIVIDER-4,y2:BY+BOX_H-4},R:{x1:DIVIDER+4,x2:BX+BOX_W-4,y2:BY+BOX_H-4}};
+  for(let iter=0;iter<200;iter++){
+    for(let b of balls){
+      const f=floors[b.side];
+      b.y=Math.min(b.y+2,f.y2-BALL_R);
+      b.x=Math.max(f.x1+BALL_R,Math.min(f.x2-BALL_R,b.x));
+      b.y=Math.max(BY+BALL_R+4,Math.min(f.y2-BALL_R,b.y));
+    }
+    for(let i=0;i<balls.length;i++)
+      for(let j=i+1;j<balls.length;j++){
+        const a=balls[i],b=balls[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<BALL_R*2+1&&d>0){const push=(BALL_R*2+1-d)/2,nx=dx/d,ny=dy/d;a.x-=nx*push;a.y-=ny*push;b.x+=nx*push;b.y+=ny*push;}
+      }
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const shakeX=shaking?(Math.random()-.5)*8:0,shakeY=shaking?(Math.random()-.5)*5:0;
+  ctx.save();ctx.translate(shakeX,shakeY);
+  ctx.fillStyle=ROOM_L_COLOR; roundRect(ctx,BX+4,BY+4,BOX_W/2-8,BOX_H-8,10); ctx.fill();
+  ctx.fillStyle=ROOM_R_COLOR; roundRect(ctx,DIVIDER+4,BY+4,BOX_W/2-8,BOX_H-8,10); ctx.fill();
+  for(let b of balls){
+    const visible=(b.side==='L'&&leftOpen)||(b.side==='R'&&rightOpen);
+    if(!visible)continue;
+    ctx.beginPath();ctx.arc(b.x,b.y,BALL_R,0,Math.PI*2);ctx.fillStyle=BALL_COLOR;ctx.fill();
+    ctx.beginPath();ctx.arc(b.x-BALL_R*.3,b.y-BALL_R*.3,BALL_R*.28,0,Math.PI*2);ctx.fillStyle=BALL_SHINE;ctx.fill();
+  }
+  ctx.strokeStyle=BOX_DARK;ctx.lineWidth=5;roundRect(ctx,BX,BY,BOX_W,BOX_H,14);ctx.stroke();
+  ctx.strokeStyle=BOX_COLOR;ctx.lineWidth=3;roundRect(ctx,BX,BY,BOX_W,BOX_H,14);ctx.stroke();
+  ctx.strokeStyle=BOX_DARK;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(DIVIDER,BY+8);ctx.lineTo(DIVIDER,BY+BOX_H-8);ctx.stroke();
+  ctx.strokeStyle=BOX_COLOR;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(DIVIDER,BY+8);ctx.lineTo(DIVIDER,BY+BOX_H-8);ctx.stroke();
+  drawLid('L',leftOpen);drawLid('R',rightOpen);
+  ctx.restore();
+  const counts=document.getElementById('counts');
+  counts.innerHTML=`<span style="color:${leftOpen?'#c03030':'#aaa'}">${leftOpen?'🔴 '+ballsLeft:'❓'}</span><span style="color:${rightOpen?'#c03030':'#aaa'}">${rightOpen?'🔴 '+ballsRight:'❓'}</span>`;
+}
+
+function drawLid(side,open){
+  if(open)return;
+  ctx.save();ctx.beginPath();
+  if(side==='L'){
+    ctx.moveTo(BX+14,BY+2);ctx.lineTo(DIVIDER-2,BY+2);ctx.lineTo(DIVIDER-2,BY+BOX_H-2);ctx.lineTo(BX+14,BY+BOX_H-2);
+    ctx.arcTo(BX+2,BY+BOX_H-2,BX+2,BY+BOX_H-14,12);ctx.lineTo(BX+2,BY+14);ctx.arcTo(BX+2,BY+2,BX+14,BY+2,12);
+  } else {
+    ctx.moveTo(DIVIDER+2,BY+2);ctx.lineTo(BX+BOX_W-14,BY+2);ctx.arcTo(BX+BOX_W-2,BY+2,BX+BOX_W-2,BY+14,12);
+    ctx.lineTo(BX+BOX_W-2,BY+BOX_H-14);ctx.arcTo(BX+BOX_W-2,BY+BOX_H-2,BX+BOX_W-14,BY+BOX_H-2,12);ctx.lineTo(DIVIDER+2,BY+BOX_H-2);
+  }
+  ctx.closePath();ctx.fillStyle=BOX_COLOR;ctx.fill();ctx.strokeStyle=BOX_DARK;ctx.lineWidth=2;ctx.stroke();
+  const hx=side==='L'?DIVIDER-22:DIVIDER+22;
+  ctx.beginPath();ctx.arc(hx,BY+BOX_H/2,7,0,Math.PI*2);ctx.fillStyle=BOX_DARK;ctx.fill();
+  ctx.restore();
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+
+function scuoti(){
+  if(shaking)return;
+  phase='shaking';rightOpen=false;leftOpen=false;
+  document.getElementById('answerRow').style.display='none';
+  document.getElementById('question').textContent='';
+  document.getElementById('feedback').textContent='';
+  document.getElementById('feedback').className='feedback';
+  document.getElementById('info').textContent='🔀 Scuotendo...';
+  shaking=true;
+  const left=Math.floor(Math.random()*(totalBalls+1));
+  ballsLeft=left;ballsRight=totalBalls-left;placeBalls();
+  let frame=0;
+  const anim=setInterval(()=>{draw();frame++;if(frame>25){clearInterval(anim);shaking=false;document.getElementById('info').textContent='Clicca su un lato per aprirlo!';phase='open';draw();}},40);
+}
+
+canvas.addEventListener('click',e=>{
+  if(phase!=='open')return;
+  const rect=canvas.getBoundingClientRect(),mx=(e.clientX-rect.left)*(W/rect.width);
+  if(mx<DIVIDER){leftOpen=true;rightOpen=false;openSide='left';}
+  else{rightOpen=true;leftOpen=false;openSide='right';}
+  const visibili=openSide==='left'?ballsLeft:ballsRight;
+  document.getElementById('info').textContent=`Vedi ${visibili} pallina${visibili!==1?'e':''} → Quante sono nell'altro lato?`;
+  document.getElementById('question').textContent=`${visibili} + ? = ${totalBalls}`;
+  document.getElementById('answerRow').style.display='flex';
+  document.getElementById('answerInput').value='';
+  document.getElementById('answerInput').focus();
+  phase='answer';draw();
+});
+
+function controlla(){
+  const ans=parseInt(document.getElementById('answerInput').value);
+  const nascoste=openSide==='left'?ballsRight:ballsLeft;
+  total++;
+  const fb=document.getElementById('feedback');
+  if(ans===nascoste){correct++;fb.textContent=`✅ Esatto! ${nascoste} palline nell'altro lato.`;fb.className='feedback ok';}
+  else{fb.textContent=`❌ Sbagliato! Erano ${nascoste}. (${openSide==='left'?ballsLeft:ballsRight} + ${nascoste} = ${totalBalls})`;fb.className='feedback no';}
+  aggiornaPunteggio();leftOpen=true;rightOpen=true;draw();phase='idle';
+  document.getElementById('answerRow').style.display='none';
+  document.getElementById('info').textContent='Premi "Scuoti" per un nuovo turno!';
+}
+
+function aggiornaPunteggio(){document.getElementById('score').textContent=`Risposte Corrette: ${correct} / ${total}`;}
+
+function ballRadiusForTotal(total){
+  return total>14?6:total>8?8:10;
+}
+
+function packBalls(x1,x2,y1,y2,count,ballR){
+  const list=[];
+  for(let i=0;i<count;i++) list.push({x:rand(x1+ballR,x2-ballR),y:rand(y1+ballR,y2-ballR)});
+  for(let iter=0;iter<150;iter++){
+    for(let b of list){
+      b.x=Math.max(x1+ballR,Math.min(x2-ballR,b.x));
+      b.y=Math.max(y1+ballR,Math.min(y2-ballR,b.y));
+    }
+    for(let i=0;i<list.length;i++)
+      for(let j=i+1;j<list.length;j++){
+        const a=list[i],b=list[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<ballR*2+1&&d>0){const push=(ballR*2+1-d)/2,nx=dx/d,ny=dy/d;a.x-=nx*push;a.y-=ny*push;b.x+=nx*push;b.y+=ny*push;}
+      }
+  }
+  return list;
+}
+
+function drawLidGeneric(ctx,side,BX,BY,BOX_W,BOX_H,DIVIDER){
+  ctx.save();ctx.beginPath();
+  if(side==='L'){
+    ctx.moveTo(BX+10,BY+2);ctx.lineTo(DIVIDER-2,BY+2);ctx.lineTo(DIVIDER-2,BY+BOX_H-2);ctx.lineTo(BX+10,BY+BOX_H-2);
+    ctx.arcTo(BX+2,BY+BOX_H-2,BX+2,BY+BOX_H-10,10);ctx.lineTo(BX+2,BY+10);ctx.arcTo(BX+2,BY+2,BX+10,BY+2,10);
+  } else {
+    ctx.moveTo(DIVIDER+2,BY+2);ctx.lineTo(BX+BOX_W-10,BY+2);ctx.arcTo(BX+BOX_W-2,BY+2,BX+BOX_W-2,BY+10,10);
+    ctx.lineTo(BX+BOX_W-2,BY+BOX_H-10);ctx.arcTo(BX+BOX_W-2,BY+BOX_H-2,BX+BOX_W-10,BY+BOX_H-2,10);ctx.lineTo(DIVIDER+2,BY+BOX_H-2);
+  }
+  ctx.closePath();ctx.fillStyle=BOX_COLOR;ctx.fill();ctx.strokeStyle=BOX_DARK;ctx.lineWidth=2;ctx.stroke();
+  const hx=side==='L'?DIVIDER-16:DIVIDER+16;
+  ctx.beginPath();ctx.arc(hx,BY+BOX_H/2,5,0,Math.PI*2);ctx.fillStyle=BOX_DARK;ctx.fill();
+  ctx.restore();
+}
+
+function drawPrintScene(canvasEl,visible,openSide,ballR){
+  const ctx=canvasEl.getContext('2d');
+  const W=canvasEl.width,H=canvasEl.height;
+  const BOX_W=W-16,BOX_H=H-16,BX=8,BY=8,DIVIDER=BX+BOX_W/2;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=ROOM_L_COLOR;roundRect(ctx,BX+3,BY+3,BOX_W/2-6,BOX_H-6,8);ctx.fill();
+  ctx.fillStyle=ROOM_R_COLOR;roundRect(ctx,DIVIDER+3,BY+3,BOX_W/2-6,BOX_H-6,8);ctx.fill();
+  const x1=openSide==='L'?BX+ballR+4:DIVIDER+ballR+4;
+  const x2=openSide==='L'?DIVIDER-ballR-4:BX+BOX_W-ballR-4;
+  const y1=BY+ballR+4,y2=BY+BOX_H-ballR-4;
+  const list=packBalls(x1,x2,y1,y2,visible,ballR);
+  for(const b of list){
+    ctx.beginPath();ctx.arc(b.x,b.y,ballR,0,Math.PI*2);ctx.fillStyle=BALL_COLOR;ctx.fill();
+    ctx.beginPath();ctx.arc(b.x-ballR*.3,b.y-ballR*.3,ballR*.28,0,Math.PI*2);ctx.fillStyle=BALL_SHINE;ctx.fill();
+  }
+  ctx.strokeStyle=BOX_DARK;ctx.lineWidth=4;roundRect(ctx,BX,BY,BOX_W,BOX_H,10);ctx.stroke();
+  ctx.strokeStyle=BOX_COLOR;ctx.lineWidth=2;roundRect(ctx,BX,BY,BOX_W,BOX_H,10);ctx.stroke();
+  ctx.strokeStyle=BOX_DARK;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(DIVIDER,BY+6);ctx.lineTo(DIVIDER,BY+BOX_H-6);ctx.stroke();
+  ctx.strokeStyle=BOX_COLOR;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(DIVIDER,BY+6);ctx.lineTo(DIVIDER,BY+BOX_H-6);ctx.stroke();
+  const closedSide=openSide==='L'?'R':'L';
+  drawLidGeneric(ctx,closedSide,BX,BY,BOX_W,BOX_H,DIVIDER);
+}
+
+function shuffledRange(total){
+  const arr=[];
+  for(let i=0;i<=total;i++) arr.push(i);
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr;
+}
+
+function generaScheda(){
+  let n=parseInt(document.getElementById('numCards').value);
+  if(isNaN(n)||n<1)n=1;if(n>20)n=20;
+  const printTotal=parseInt(document.getElementById('printTotal').value)||20;
+  const ballR=ballRadiusForTotal(printTotal);
+  const sheet=document.getElementById('printSheet');
+  sheet.innerHTML='';
+  let pool=shuffledRange(printTotal),poolIdx=0;
+  for(let i=0;i<n;i++){
+    if(poolIdx>=pool.length){pool=shuffledRange(printTotal);poolIdx=0;}
+    const visible=pool[poolIdx++];
+    const openSide=Math.random()<0.5?'L':'R';
+    const card=document.createElement('div');
+    card.className='print-card';
+    card.innerHTML=`<div class="print-card-header"><img class="print-logo" src="https://raw.githubusercontent.com/rdiianni-alt/quiz-matematica-prima/fca31cdfe65286a5abbf269e23429e4ddc479c78/logo.png" alt="logo"><span class="print-title">🎲 Scatolina Gialla</span></div><div class="print-total">In tutto ci sono ${printTotal} palline</div>`;
+    const cvs=document.createElement('canvas');
+    cvs.width=260;cvs.height=105;cvs.style.width='100%';cvs.style.height='auto';
+    card.appendChild(cvs);
+    sheet.appendChild(card);
+    drawPrintScene(cvs,visible,openSide,ballR);
+  }
+  setTimeout(()=>window.print(),100);
+}
+
+const btn=document.createElement('button');
+btn.textContent='🌋 Scuoti!';
+btn.style.cssText='margin:12px auto 0;display:block;padding:10px 36px;font-size:1.1rem;background:#e53935;color:#fff;border:none;border-radius:12px;cursor:pointer;font-weight:bold;letter-spacing:2px;font-family:Georgia,serif;font-variant:small-caps';
+btn.onmouseenter=()=>btn.style.background='#c62828';
+btn.onmouseleave=()=>btn.style.background='#e53935';
+btn.onclick=scuoti;
+canvas.insertAdjacentElement('afterend',btn);
+const info=document.getElementById('info');
+btn.insertAdjacentElement('afterend',info);
+nuovaPartita();
+</script>
+</body>
+</html>

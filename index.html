@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Matematiche Non Si Nasce – Giochi</title>
+<meta name="description" content="Cinque giochi per scoprire i numeri giocando.">
+<meta name="theme-color" content="#f5f0e8">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone/icona-192.png">
+<link rel="apple-touch-icon" href="icone/icona-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mate Giochi">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Lexend:wght@400;500;600&display=swap">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;background:#f5f0e8;color:#3a2e1e;font-family:Lexend,system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+a{color:#7a5c2e}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer;touch-action:manipulation}
+.home{min-height:100dvh;display:flex;flex-direction:column;max-width:1040px;margin:0 auto;padding:max(28px,env(safe-area-inset-top)) 20px max(32px,env(safe-area-inset-bottom))}
+.top{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:8px 0 26px}
+.top img{width:76px;height:76px;object-fit:contain;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(122,92,46,.18)}
+.top h1{margin:0;font:800 clamp(28px,6vw,40px)/1 'Baloo 2',sans-serif;color:#7a5c2e}
+.top p{margin:0;font-size:15px;color:#6b5a40;max-width:34ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px}
+.card{display:flex;align-items:center;gap:16px;padding:12px;text-align:left;background:#fffdf7;border:1.5px solid #e2d6bd;border-radius:22px;box-shadow:0 2px 0 #e2d6bd;transition:transform .12s}
+.card:active{transform:scale(.98)}
+@media (hover:hover){.card:hover{transform:translateY(-2px)}}
+.tile{flex:none;width:84px;height:84px;border-radius:16px;display:grid;place-items:center;font-size:42px}
+.txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.tag{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.name{font:700 22px/1.05 'Baloo 2',sans-serif}
+.desc{font-size:13px;line-height:1.35;color:#6b5a40}
+.arrow{flex:none;font:700 26px 'Baloo 2',sans-serif;color:#c8b89a;padding-right:6px}
+.foot{margin-top:auto;padding-top:36px;text-align:center;font-size:13px}
+.foot a{font-weight:500}
+.game{position:fixed;inset:0;display:none;flex-direction:column;background:#f5f0e8}
+.game.on{display:flex}
+.bar{flex:none;display:flex;align-items:center;gap:10px;padding:max(10px,env(safe-area-inset-top)) 12px 10px}
+.bar .b{height:48px;border-radius:14px;background:rgba(255,255,255,.85);display:grid;place-items:center}
+.back{width:48px;font:700 30px/1 'Baloo 2',sans-serif}
+.rules-btn{padding:0 16px;font-weight:600;font-size:14px}
+.bar .em{font-size:26px}
+.bar .t{flex:1;min-width:0;font:700 21px/1.1 'Baloo 2',sans-serif;color:#2a2010;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+iframe{flex:1;width:100%;border:0;background:#fff;display:block}
+.shade{position:absolute;inset:0;background:rgba(40,30,15,.45);display:none;align-items:flex-end;justify-content:center}
+.shade.on{display:flex;animation:fade .2s}
+.sheet{width:100%;max-width:560px;background:#fffdf7;border-radius:26px 26px 0 0;padding:14px 24px max(24px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px;animation:up .28s cubic-bezier(.2,.8,.2,1)}
+.grab{align-self:center;width:44px;height:5px;border-radius:3px;background:#e2d6bd}
+.sh{display:flex;align-items:center;gap:14px}
+.sh .tile{width:60px;height:60px;border-radius:14px;font-size:30px}
+.sheet p{margin:0;font-size:16px;line-height:1.55;color:#4a3820}
+.play{height:54px;border-radius:16px;background:#3a2e1e;color:#fffdf7;font:700 20px/54px 'Baloo 2',sans-serif;text-align:center}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+</style>
+</head>
+<body>
+
+<div class="home" id="home">
+  <header class="top">
+    <img src="icone/logo.png" alt="Logo Matematiche Non Si Nasce">
+    <h1>Matematiche Non Si Nasce</h1>
+    <p>Cinque giochi per scoprire i numeri giocando. Scegline uno!</p>
+  </header>
+  <main class="grid" id="grid"></main>
+  <footer class="foot"><a href="https://matematichenonsinasce.com/" target="_blank" rel="noopener">Leggi il blog → matematichenonsinasce.com</a></footer>
+</div>
+
+<div class="game" id="game">
+  <div class="bar" id="bar">
+    <button class="b back" id="back" aria-label="Torna ai giochi">‹</button>
+    <span class="em" id="gEm"></span>
+    <span class="t" id="gTitle"></span>
+    <button class="b rules-btn" id="rulesBtn">Regole</button>
+  </div>
+  <iframe id="frame" title="Gioco"></iframe>
+  <div class="shade" id="shade">
+    <div class="sheet" id="sheet">
+      <div class="grab"></div>
+      <div class="sh">
+        <div class="tile" id="sTile"></div>
+        <div class="txt"><span class="tag" id="sTag" style="color:#8a7650"></span><span class="name" id="sTitle"></span></div>
+      </div>
+      <p id="sRules"></p>
+      <button class="play" id="play">Gioca!</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const GAMES = [
+  { id:'scatolina', emoji:'🎲', title:'Scatolina Gialla', tag:'Amici dei numeri', tagColor:'#9a7a10', color:'#e8c030', dark:'#b8960a', src:'giochi/scatolina.html',
+    desc:"Quante palline sono nascoste dall'altra parte?",
+    rules:"Scuoti la scatolina, apri uno sportello e conta le palline che vedi. Quante sono rimaste dall'altra parte? Un modo semplice per scoprire gli amici del 10, del 20 o di qualsiasi numero scelto." },
+  { id:'supermercato', emoji:'🛒', title:'Spesa al Supermercato', tag:'Soldi e resto', tagColor:'#2e7d32', color:'#7cc47f', dark:'#2e7d32', src:'giochi/supermercato.html',
+    desc:'Calcola il totale, paga e trova il resto.',
+    rules:"Guarda gli articoli nel carrello e calcola quanto spendi. Poi scegli le banconote per pagare e calcola il resto. Tre livelli: prezzi interi, con i ,50 e con i centesimi." },
+  { id:'gambero', emoji:'🦐', title:"Dov'è Gambero Rosso?", tag:'Logica', tagColor:'#0a6a9a', color:'#7dd4f8', dark:'#3a9fd0', src:'giochi/gambero-rosso.html',
+    desc:'Fai domande ed elimina le carte sbagliate.',
+    rules:"Gambero Rosso è nascosto dietro una delle carte. Scegli una domanda su pesciolini, bollicine e fondale, poi tocca le carte da eliminare. Riesci a trovarlo con poche domande?" },
+  { id:'uri', emoji:'🏺', title:'Il Gioco di Uri', tag:'Decine e unità', tagColor:'#8a5a20', color:'#d9b486', dark:'#a07a4a', src:'giochi/uri.html',
+    desc:'Sfere e coni: che numero è?',
+    rules:"Ogni sfera vale 10, ogni cono vale 1. Conta le forme sulla tavoletta e scrivi che numero rappresentano." },
+  { id:'mazzetti', emoji:'🥤', title:'Mazzetti di Cannucce', tag:'Cambi fino a 99', tagColor:'#1c7c90', color:'#5fb3c4', dark:'#1c7c90', src:'giochi/mazzetti.html',
+    desc:'Lega un mazzetto ogni dieci cannucce.',
+    rules:"Scrivi un numero o un'operazione fino a 99. Le mani mettono le cannucce sulla tovaglietta, legano un mazzetto ogni dieci e lo slegano quando serve." }
+];
+const $ = id => document.getElementById(id);
+
+$('grid').innerHTML = GAMES.map(g => `
+  <button class="card" data-id="${g.id}">
+    <div class="tile" style="background:${g.color};box-shadow:inset 0 -4px 0 ${g.dark}">${g.emoji}</div>
+    <div class="txt">
+      <span class="tag" style="color:${g.tagColor}">${g.tag}</span>
+      <span class="name">${g.title}</span>
+      <span class="desc">${g.desc}</span>
+    </div>
+    <span class="arrow">›</span>
+  </button>`).join('');
+
+let current = null;
+function show(id, fromNav) {
+  const g = GAMES.find(x => x.id === id);
+  if (!g) { // home
+    current = null;
+    $('game').classList.remove('on'); $('home').style.display = '';
+    $('frame').src = 'about:blank';
+    return;
+  }
+  current = g;
+  $('bar').style.cssText = `background:${g.color};box-shadow:inset 0 -4px 0 ${g.dark}`;
+  $('gEm').textContent = g.emoji; $('gTitle').textContent = g.title;
+  $('sTile').textContent = g.emoji; $('sTile').style.cssText = `background:${g.color};box-shadow:inset 0 -3px 0 ${g.dark}`;
+  $('sTag').textContent = g.tag; $('sTitle').textContent = g.title; $('sRules').textContent = g.rules;
+  $('frame').src = g.src;
+  $('home').style.display = 'none'; $('game').classList.add('on');
+  if (!fromNav) $('shade').classList.add('on');
+}
+
+// Il tasto "indietro" del telefono riporta alla home
+$('grid').addEventListener('click', e => {
+  const c = e.target.closest('.card'); if (c) location.hash = c.dataset.id;
+});
+window.addEventListener('hashchange', () => show(location.hash.slice(1)));
+$('back').onclick = () => { if (history.length > 1 && current) history.back(); else location.hash = ''; };
+$('rulesBtn').onclick = () => $('shade').classList.add('on');
+$('play').onclick = () => $('shade').classList.remove('on');
+$('shade').onclick = e => { if (e.target === $('shade')) $('shade').classList.remove('on'); };
+if (location.hash) show(location.hash.slice(1), true);
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>

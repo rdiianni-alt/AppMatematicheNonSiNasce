@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;background:linear-gradient(180deg,#b8e8ff 0%,#7dd4f8 50%,#a0e0ff 100%);min-height:100vh;padding:16px}
+.header{text-align:center;margin-bottom:14px}
+.header a{display:inline-block;text-decoration:none}
+.header img{width:60px;height:60px;object-fit:contain;border-radius:50%;display:block;margin:0 auto 6px}
+.header .blogname{font-size:13px;font-weight:700;color:#005a8a;text-transform:uppercase;letter-spacing:1px}
+h1{text-align:center;font-size:22px;font-weight:700;color:#005a8a;margin-bottom:2px;letter-spacing:1px}
+.subtitle{text-align:center;font-size:13px;color:#0077aa;margin-bottom:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.controls{max-width:780px;margin:0 auto 14px;background:rgba(255,255,255,0.88);border-radius:16px;padding:14px 18px;border:2px solid #60c0f0;box-shadow:0 4px 18px rgba(0,120,200,0.13)}
+.ask-label{font-size:13px;font-weight:700;color:#005a8a;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.ask-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+select{flex:1;min-width:220px;padding:9px 14px;border-radius:24px;border:2px solid #60c0f0;background:#eef8ff;color:#003a60;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.ask-btn{background:#f75048;border:none;border-radius:24px;padding:9px 22px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:1px}
+.ask-btn:hover{background:#c02018}
+.answer-box{min-height:30px;font-size:17px;font-weight:700;text-align:center;padding:4px 0;text-transform:uppercase;letter-spacing:1px}
+.si{color:#00a040}.no{color:#dd2010}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;max-width:780px;margin:0 auto}
+.card{cursor:pointer;border-radius:14px;border:3px solid #fff;aspect-ratio:1.45/1;box-shadow:0 4px 14px rgba(0,80,160,0.18);transition:opacity .3s,transform .15s,box-shadow .15s;background:#c8eeff;overflow:hidden}
+.card:hover:not(.eliminated){transform:scale(1.06);box-shadow:0 6px 22px rgba(0,80,200,0.3);border-color:#f0c000}
+.card.eliminated{opacity:0.12;cursor:default;box-shadow:none;border-color:rgba(180,200,220,0.3)}
+.card svg{width:100%;height:100%;display:block}
+.bottom-row{display:flex;justify-content:center;gap:12px;margin:14px auto;max-width:780px;flex-wrap:wrap}
+.new-btn{background:#f75048;border:none;border-radius:24px;padding:9px 28px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:1px}
+.new-btn:hover{background:#c02018}
+.found-btn{background:#00a040;border:none;border-radius:24px;padding:9px 28px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:1px;display:none}
+.found-btn:hover{background:#007a30}
+.result-msg{text-align:center;font-size:18px;font-weight:700;margin:10px 0;text-transform:uppercase;letter-spacing:1px;display:none}
+.result-msg.win{color:#007a30}
+.result-msg.lose{color:#cc2010}
+</style>
+<style id="app-mobile">
+a[href*="matematichenonsinasce"]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent}
+button,select,input{touch-action:manipulation}
+@media (hover:none){*:hover{transform:none!important}}
+
+.header,h1,.subtitle{display:none!important}
+@media (max-width:767px){
+body{padding:10px!important}
+.controls{position:sticky;top:8px;z-index:5;padding:10px 12px!important;border-radius:14px!important;margin-bottom:10px!important}
+.ask-row{flex-wrap:nowrap!important}
+select{min-width:0!important;height:48px;font-size:12px!important;padding:0 10px!important}
+.ask-btn{height:48px;padding:0 16px!important}
+.answer-box{font-size:20px!important;min-height:28px!important;padding:2px 0!important}
+.grid{grid-template-columns:repeat(4,1fr)!important;gap:6px!important}
+.card{border-width:2px!important;border-radius:10px!important}
+.bottom-row{flex-direction:column}
+.new-btn,.found-btn{width:100%;height:52px}
+.result-msg{font-size:16px!important}
+}</style>
+</head>
+<body>
+<div class="header">
+  <a href="https://matematichenonsinasce.com/" >
+    <img src="https://raw.githubusercontent.com/rdiianni-alt/quiz-matematica-prima/fca31cdfe65286a5abbf269e23429e4ddc479c78/logo.png" alt="Logo blog">
+    <span class="blogname">MATEMATICHE NON SI NASCE</span>
+  </a>
+</div>
+<h1>🦐 DOV'È NASCOSTO GAMBERO ROSSO?</h1>
+<p class="subtitle">Fai una domanda, poi gira le carte da eliminare!</p>
+<div class="controls">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div class="ask-label">Fai una domanda:</div>
+    <div id="contatore" style="font-size:13px;font-weight:700;color:#005a8a;text-transform:uppercase;letter-spacing:1px">DOMANDE FATTE: 0</div>
+  </div>
+  <div class="ask-row">
+    <select id="qsel" onchange="chiedi()">
+      <option value="">— SCEGLI UNA DOMANDA —</option>
+      <optgroup label="COLORE DEL PESCIOLINO">
+        <option value="pesce-verde">È DIETRO IL PESCIOLINO VERDE?</option>
+        <option value="pesce-blu">È DIETRO IL PESCIOLINO BLU?</option>
+        <option value="pesce-arancione">È DIETRO IL PESCIOLINO ARANCIONE?</option>
+      </optgroup>
+      <optgroup label="BOLLICINE">
+        <option value="boll-si">È NASCOSTO DOVE CI SONO BOLLICINE?</option>
+        <option value="boll-no">È NASCOSTO DOVE NON CI SONO BOLLICINE?</option>
+      </optgroup>
+      <optgroup label="FONDALE">
+        <option value="fond-niente">È NASCOSTO DOVE NON C'È NIENTE SUL FONDALE?</option>
+        <option value="fond-conchiglia">È NASCOSTO DOVE C'È UNA CONCHIGLIA?</option>
+        <option value="fond-stella">È NASCOSTO DOVE C'È UNA STELLA MARINA?</option>
+        <option value="fond-corallo">È NASCOSTO DOVE C'È UN CORALLO?</option>
+      </optgroup>
+    </select>
+    <button class="ask-btn" onclick="chiedi()">Chiedi!</button>
+  </div>
+  <div class="answer-box" id="ansbox"></div>
+</div>
+<div class="result-msg" id="resultmsg"></div>
+<div class="grid" id="grid"></div>
+<div class="bottom-row">
+  <button class="found-btn" id="foundbtn" onclick="verifica()">HO TROVATO GAMBERO ROSSO?</button>
+  <button class="new-btn" onclick="newGame()">Nuova partita</button>
+</div>
+
+<script>
+const PESCI=[
+  {id:'verde',    c1:'#22bb55',c2:'#0a7a30',c3:'#88ffaa'},
+  {id:'blu',      c1:'#2288ee',c2:'#0044aa',c3:'#88ccff'},
+  {id:'arancione',c1:'#ff8822',c2:'#cc4400',c3:'#ffcc88'}
+];
+const FONDALI=['niente','conchiglia','stella','corallo'];
+
+function buildAllCards(){
+  const cards=[];
+  for(const p of PESCI)
+    for(const b of [false,true])
+      for(const f of FONDALI)
+        cards.push({pesce:p,bolle:b,fondale:f});
+  return cards;
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+// --- SVG builders ---
+function svgPesce(p){
+  return `<g transform="translate(50,34)">
+    <path d="M20,0 Q26,-13 36,-9 Q30,0 36,9 Q26,13 20,0" fill="${p.c2}"/>
+    <ellipse cx="0" cy="0" rx="22" ry="13" fill="${p.c1}" stroke="${p.c2}" stroke-width="1.5"/>
+    <ellipse cx="3" cy="-1" rx="13" ry="8" fill="${p.c3}" opacity="0.4"/>
+    <path d="M-3,-13 Q2,-18 7,-13" fill="${p.c2}" stroke="${p.c2}" stroke-width="1"/>
+    <path d="M6,10 Q10,16 15,12" fill="${p.c2}" stroke="${p.c2}" stroke-width="1"/>
+    <path d="M-8,11 Q-4,17 0,13" fill="${p.c2}" stroke="${p.c2}" stroke-width="1"/>
+    <circle cx="-14" cy="-3" r="4.5" fill="#fff"/>
+    <circle cx="-13" cy="-3" r="3" fill="#111"/>
+    <circle cx="-12" cy="-4" r="1.2" fill="#fff"/>
+    <path d="M-21,0 Q-27,-6 -25,-11" fill="none" stroke="${p.c2}" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M-21,0 Q-28,4 -26,9" fill="none" stroke="${p.c2}" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M-7,-2 Q-3,2 -7,6" fill="none" stroke="${p.c2}" stroke-width="1.1" stroke-linecap="round" opacity="0.45"/>
+  </g>`;
+}
+
+function svgBollicine(){
+  return `
+    <circle cx="78" cy="10" r="5.5" fill="#e8f8ff" stroke="#4499cc" stroke-width="2"/>
+    <circle cx="76.5" cy="8.5" r="1.8" fill="#fff" opacity="0.9"/>
+    <circle cx="87" cy="21" r="4" fill="#e8f8ff" stroke="#4499cc" stroke-width="2"/>
+    <circle cx="85.8" cy="19.8" r="1.2" fill="#fff" opacity="0.9"/>
+    <circle cx="79" cy="28" r="4.8" fill="#e8f8ff" stroke="#4499cc" stroke-width="2"/>
+    <circle cx="77.5" cy="26.5" r="1.5" fill="#fff" opacity="0.9"/>`;
+}
+
+function svgConchiglia(x,y){
+  return `<g transform="translate(${x},${y})">
+    <path d="M0,0 Q-9,-7 -7,-17 Q0,-22 7,-17 Q9,-7 0,0" fill="#f0c878" stroke="#c09040" stroke-width="1.2"/>
+    <path d="M0,0 Q-5,-6 -4,-13" fill="none" stroke="#c09040" stroke-width="0.9"/>
+    <path d="M0,0 Q0,-8 0,-15" fill="none" stroke="#c09040" stroke-width="0.9"/>
+    <path d="M0,0 Q5,-6 4,-13" fill="none" stroke="#c09040" stroke-width="0.9"/>
+    <ellipse cx="0" cy="1" rx="4.5" ry="2.5" fill="#e0b060" stroke="#c09040" stroke-width="0.9"/>
+  </g>`;
+}
+
+function svgStella(x,y){
+  const pts=[];
+  for(let i=0;i<5;i++){
+    const a=i*72-90, b=a+36;
+    const ar=a*Math.PI/180, br=b*Math.PI/180;
+    pts.push(`${(Math.cos(ar)*12).toFixed(1)},${(Math.sin(ar)*12).toFixed(1)}`);
+    pts.push(`${(Math.cos(br)*5).toFixed(1)},${(Math.sin(br)*5).toFixed(1)}`);
+  }
+  return `<g transform="translate(${x},${y})">
+    <polygon points="${pts.join(' ')}" fill="#e02020" stroke="#900000" stroke-width="1"/>
+    <circle cx="0" cy="0" r="3.5" fill="#ff5040"/>
+  </g>`;
+}
+
+function svgCorallo(x,y){
+  return `<g transform="translate(${x},${y})">
+    <rect x="-2.5" y="-22" width="5" height="22" rx="2.5" fill="#f06040" stroke="#b02010" stroke-width="1"/>
+    <rect x="-9" y="-16" width="4" height="16" rx="2" fill="#f07858" stroke="#b02010" stroke-width="1" transform="rotate(-18 -9 0)"/>
+    <rect x="7" y="-14" width="4" height="14" rx="2" fill="#f07858" stroke="#b02010" stroke-width="1" transform="rotate(18 7 0)"/>
+    <ellipse cx="-2" cy="-22" rx="4" ry="3" fill="#ff9070"/>
+    <ellipse cx="-13" cy="-19" rx="3.5" ry="2.5" fill="#ff9070"/>
+    <ellipse cx="11" cy="-17" rx="3.5" ry="2.5" fill="#ff9070"/>
+  </g>`;
+}
+
+function svgGambero(x,y){
+  return `<g transform="translate(${x},${y})">
+    <ellipse cx="0" cy="0" rx="12" ry="7.5" fill="#e83020" stroke="#900800" stroke-width="1.2"/>
+    <ellipse cx="-9" cy="0" rx="6.5" ry="5" fill="#f04030" stroke="#900800" stroke-width="1"/>
+    <rect x="-6" y="-3" width="4" height="5.5" rx="2" fill="#c01808"/>
+    <rect x="0" y="-3" width="4" height="5.5" rx="2" fill="#c01808"/>
+    <rect x="6" y="-3" width="4" height="5.5" rx="2" fill="#c01808"/>
+    <line x1="10" y1="-3" x2="18" y2="-8" stroke="#e03020" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="10" y1="3" x2="18" y2="8" stroke="#e03020" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="-13" y1="-2" x2="-20" y2="-7" stroke="#e03020" stroke-width="1.3" stroke-linecap="round"/>
+    <line x1="-13" y1="2" x2="-20" y2="7" stroke="#e03020" stroke-width="1.3" stroke-linecap="round"/>
+    <circle cx="-13" cy="-1" r="3" fill="#f06050"/>
+    <circle cx="-14" cy="-2" r="1.3" fill="#111"/>
+  </g>`;
+}
+
+function cardSVG(card, showGambero){
+  const fondEl = card.fondale==='conchiglia' ? svgConchiglia(20,70) :
+                 card.fondale==='stella'      ? svgStella(20,62) :
+                 card.fondale==='corallo'     ? svgCorallo(20,70) : '';
+  return `<svg viewBox="0 0 100 78" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="78" fill="#c0e8ff" rx="6"/>
+    <rect x="0" y="56" width="100" height="22" fill="#90c8f0" rx="0"/>
+    <rect x="0" y="68" width="100" height="10" fill="#b0d890" opacity="0.55" rx="0"/>
+    ${svgPesce(card.pesce)}
+    ${card.bolle ? svgBollicine() : ''}
+    ${fondEl}
+    ${showGambero ? svgGambero(72,62) : ''}
+  </svg>`;
+}
+
+let cards=[],gamberoIdx=-1,eliminated=new Set(),gameOver=false,nDomande=0;
+
+function newGame(){
+  const all=buildAllCards();shuffle(all);
+  cards=all.slice(0,24);
+  gamberoIdx=Math.floor(Math.random()*24);
+  eliminated=new Set();gameOver=false;
+  nDomande=0;document.getElementById('contatore').textContent='DOMANDE FATTE: 0';
+  document.getElementById('ansbox').textContent='';
+  document.getElementById('qsel').value='';
+  const res=document.getElementById('resultmsg');
+  res.style.display='none';res.className='result-msg';res.textContent='';
+  document.getElementById('foundbtn').style.display='none';
+  renderGrid();
+}
+
+function renderGrid(){
+  const grid=document.getElementById('grid');grid.innerHTML='';
+  cards.forEach((card,i)=>{
+    const div=document.createElement('div');
+    div.className='card'+(eliminated.has(i)?' eliminated':'');
+    div.id='c'+i;
+    div.innerHTML=cardSVG(card, gameOver&&i===gamberoIdx);
+    if(!gameOver) div.onclick=()=>toggle(i);
+    grid.appendChild(div);
+  });
+}
+
+function toggle(i){
+  if(gameOver)return;
+  if(eliminated.has(i)) eliminated.delete(i);
+  else eliminated.add(i);
+  const d=document.getElementById('c'+i);
+  if(d) d.className='card'+(eliminated.has(i)?' eliminated':'');
+  const rem=cards.length-eliminated.size;
+  document.getElementById('foundbtn').style.display=(rem===1)?'block':'none';
+}
+
+function verifica(){
+  if(gameOver)return;
+  const last=cards.findIndex((_,j)=>!eliminated.has(j));
+  gameOver=true;
+  const res=document.getElementById('resultmsg');
+  res.style.display='block';
+  if(last===gamberoIdx){
+    res.className='result-msg win';
+    res.textContent='ESATTO! HAI TROVATO GAMBERO ROSSO!';
+  } else {
+    res.className='result-msg lose';
+    res.textContent='NO! GAMBERO ROSSO ERA DA UN\'ALTRA PARTE! RITENTA!';
+  }
+  renderGrid();
+  res.scrollIntoView({behavior:'smooth'});
+}
+
+function matchesQuery(card,q){
+  if(q==='pesce-verde')     return card.pesce.id==='verde';
+  if(q==='pesce-blu')       return card.pesce.id==='blu';
+  if(q==='pesce-arancione') return card.pesce.id==='arancione';
+  if(q==='boll-si')         return card.bolle===true;
+  if(q==='boll-no')         return card.bolle===false;
+  if(q==='fond-niente')     return card.fondale==='niente';
+  if(q==='fond-conchiglia') return card.fondale==='conchiglia';
+  if(q==='fond-stella')     return card.fondale==='stella';
+  if(q==='fond-corallo')    return card.fondale==='corallo';
+  return false;
+}
+
+function chiedi(){
+  const q=document.getElementById('qsel').value;
+  if(!q){document.getElementById('ansbox').textContent='';return;}
+  nDomande++;
+  document.getElementById('contatore').textContent='DOMANDE FATTE: '+nDomande;
+  const ans=matchesQuery(cards[gamberoIdx],q);
+  document.getElementById('ansbox').innerHTML=ans?'<span class="si">✅ SÌ!</span>':'<span class="no">❌ NO!</span>';
+}
+
+newGame();
+</script>
+</body>
+</html>

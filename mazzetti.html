@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="it" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mazzetti di cannucce</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Lexend:wght@300;400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#ffffff; --panel:#fbfcf7; --ink:#1f2a22; --muted:#5a6758; --line:#d3dac6;
+  --accent:#1c7c90; --accent-ink:#ffffff; --soft:#dfe9c4; --warn:#a33a2a;
+  --display:"Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  --body:"Lexend", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#141915; --panel:#1c231e; --ink:#e6ece2; --muted:#9dab9c; --line:#303b32;
+    --accent:#5bbfd2; --accent-ink:#0d1a1d; --soft:#2a3526; --warn:#ff8f7a;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#141915; --panel:#1c231e; --ink:#e6ece2; --muted:#9dab9c; --line:#303b32;
+  --accent:#5bbfd2; --accent-ink:#0d1a1d; --soft:#2a3526; --warn:#ff8f7a;
+}
+*{box-sizing:border-box}
+.logo{display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;align-self:center}
+.logo img{width:60px;height:60px;object-fit:contain;border-radius:50%}
+.logo span{font-size:14px;color:var(--text-secondary,#5f5e5a)}
+.logo:focus-visible{outline:3px solid var(--accent);outline-offset:4px;border-radius:8px}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:22px 40px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 24px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4vw,40px);line-height:1;margin:0;color:var(--accent);letter-spacing:.01em}
+header p{margin:0;color:var(--muted);max-width:60ch;font-size:14px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+canvas{display:block;width:100%;aspect-ratio:1180/760;max-width:100%;background:#e3e1da}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;padding:12px 16px;border-top:1px solid var(--line)}
+#eq{font-family:var(--display);font-weight:700;font-size:30px;line-height:1;font-variant-numeric:tabular-nums;min-width:7ch;color:var(--ink)}
+#eq .q{color:var(--accent)}
+#caption{flex:1 1 320px;margin:0;font-size:15px;color:var(--ink);min-height:1.5em}
+.pausebtn{font-family:var(--display);font-weight:700;font-size:20px;min-width:9ch;min-height:48px;border-color:var(--accent);color:var(--accent)}
+.pausebtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.stage.is-paused #caption{font-weight:500}
+form{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 16px}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.fld input{font-family:var(--display);font-size:28px;font-weight:600;width:4.2ch;padding:2px 8px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);text-align:center;font-variant-numeric:tabular-nums}
+.fld input::placeholder{color:var(--muted);opacity:.45}
+.fld input:focus-visible{outline:3px solid var(--accent);outline-offset:1px;border-color:transparent}
+.seg{display:flex;border:2px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{padding:6px 14px;cursor:pointer;font-size:14px;color:var(--muted);display:flex;align-items:center;min-height:44px}
+.seg.ops label{font-family:var(--display);font-size:26px;font-weight:700;min-width:48px;justify-content:center;padding:0 12px}
+.seg.ops label.word{font-family:var(--body);font-size:14px;font-weight:400}
+.seg input:checked+label{background:var(--accent);color:var(--accent-ink)}
+.seg input:focus-visible+label{outline:3px solid var(--accent);outline-offset:-3px}
+.seg.speed label{min-height:36px;padding:4px 12px}
+button{font-family:var(--body);font-size:14px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink);padding:8px 14px;cursor:pointer;min-height:40px}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-family:var(--display);font-weight:700;font-size:22px;padding:4px 26px;min-height:48px}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-right:4px}
+.group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.msg{margin:0;color:var(--warn);font-size:14px;min-height:1.2em}
+.examples{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.examples button{font-family:var(--display);font-size:18px;font-weight:600;padding:2px 12px;min-height:36px;border-radius:20px;background:var(--soft);border-color:transparent;font-variant-numeric:tabular-nums}
+.note{color:var(--muted);font-size:13px;margin:0;max-width:75ch}
+.pdfcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;margin-top:10px}
+.pdfcard h2{font-family:var(--display);font-weight:700;font-size:24px;line-height:1.1;margin:0;color:var(--ink)}
+@media (max-width:560px){
+  #eq{font-size:24px}
+  button.primary{width:100%}
+}
+@media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto} }
+</style>
+<style id="app-mobile">
+a[href*="matematichenonsinasce"]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent}
+button,select,input{touch-action:manipulation}
+@media (hover:none){*:hover{transform:none!important}}
+
+.wrap>header{display:none!important}
+@media (max-width:767px){
+.wrap{padding:10px 10px 28px!important;gap:10px!important}
+.pdfcard,.note{display:none!important}
+.bar{padding:10px 12px!important;gap:6px 12px!important}
+#caption{font-size:14px!important;flex-basis:100%!important;order:3}
+.pausebtn{margin-left:auto;min-height:44px!important}
+form{padding:12px!important;gap:12px!important}
+.row{gap:10px!important}
+.group,.seg{width:100%}
+.seg label{flex:1;justify-content:center;padding:4px 6px!important;text-align:center;font-size:13px!important}
+.seg.ops label{font-size:24px!important}
+.seg.ops label.word{font-size:13px!important}
+.fld{flex:1}
+.fld input{width:100%!important;height:52px}
+.check{font-size:13px!important}
+.group button{flex:1;min-height:44px}
+.examples{flex-wrap:nowrap!important;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.examples button{flex:none}
+}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="logo" href="https://matematichenonsinasce.com/" target="_blank" rel="noopener">
+    <img src="https://raw.githubusercontent.com/rdiianni-alt/matematichenonsinasce/main/logo.png" alt="Logo Matematiche non si nasce">
+    <span>Matematiche non si nasce</span>
+  </a>
+  <header>
+    <h1>Mazzetti di cannucce</h1>
+    <p>Dai un numero o un'operazione fino a 99. Le mani mettono le cannucce sulla tovaglietta, legano un mazzetto ogni dieci e lo slegano quando serve.</p>
+  </header>
+
+  <section class="stage" aria-label="Tovaglietta decine e unità">
+    <canvas id="scene" role="img" aria-label="Vista dall'alto di una tovaglietta verde divisa in decine e unità, con cannucce e mazzetti legati con l'elastico"></canvas>
+    <div class="bar">
+      <div id="eq" aria-live="polite">0</div>
+      <p id="caption" aria-live="polite">La tovaglietta è vuota. Scrivi un numero e premi Avvia.</p>
+      <button type="button" id="pause" class="pausebtn" disabled aria-pressed="false">Pausa</button>
+    </div>
+  </section>
+
+  <form id="ctrl" autocomplete="off">
+    <div class="row">
+      <label class="fld" for="start"><span>Parto da</span><input id="start" type="text" value="" placeholder="0" inputmode="numeric" maxlength="7" enterkeyhint="go"></label>
+      <div class="seg ops" role="radiogroup" aria-label="Operazione">
+        <input type="radio" name="op" id="op-add" value="+"><label for="op-add" title="aggiungo">+</label>
+        <input type="radio" name="op" id="op-sub" value="-"><label for="op-sub" title="tolgo">−</label>
+        <input type="radio" name="op" id="op-none" value="" checked><label for="op-none" class="word">solo il numero</label>
+      </div>
+      <label class="fld" for="second" id="secondWrap"><span>Cannucce</span><input id="second" type="text" value="" inputmode="numeric" maxlength="4" enterkeyhint="go"></label>
+      <button id="go" type="button" class="primary">Avvia</button>
+    </div>
+    <div class="row">
+      <div class="group">
+        <span class="lbl">Velocità</span>
+        <div class="seg speed" role="radiogroup" aria-label="Velocità">
+          <input type="radio" name="speed" id="sp-1" value="0.6"><label for="sp-1">lenta</label>
+          <input type="radio" name="speed" id="sp-2" value="1" checked><label for="sp-2">normale</label>
+          <input type="radio" name="speed" id="sp-3" value="2.2"><label for="sp-3">veloce</label>
+          <input type="radio" name="speed" id="sp-4" value="4.5"><label for="sp-4">velocissima</label>
+        </div>
+      </div>
+      <label class="check" for="stopBefore"><input type="checkbox" id="stopBefore" checked> Fermati prima dell'operazione, per far prevedere il risultato</label>
+      <label class="check" for="ready"><input type="checkbox" id="ready"> Anche con «solo il numero» prendi i mazzetti già pronti</label>
+      <div class="group">
+        <button type="button" id="skip" disabled>Salta alla fine</button>
+        <button type="button" id="reset">Svuota la tovaglietta</button>
+      </div>
+    </div>
+    <p id="msg" class="msg" role="status"></p>
+  </form>
+
+  <div class="examples" aria-label="Esempi">
+    <span class="lbl">Prova</span>
+    <button type="button" data-ex="20,-,13">20 − 13</button>
+    <button type="button" data-ex="27,+,15">27 + 15</button>
+    <button type="button" data-ex="34,,0">34</button>
+    <button type="button" data-ex="40,-,1">40 − 1</button>
+    <button type="button" data-ex="58,+,7">58 + 7</button>
+    <button type="button" data-ex="63,-,28">63 − 28</button>
+  </div>
+  <p class="note">Se il numero di partenza è già sulla tovaglietta, le mani fanno solo l'operazione; altrimenti prima svuotano e ricompongono. Dopo ogni operazione il risultato diventa il nuovo numero di partenza, così puoi continuare.</p>
+
+  <section class="pdfcard" aria-label="Scheda da stampare">
+    <h2>Scheda da stampare: a quanto arrivo?</h2>
+    <p class="note">Ogni esercizio ha una tovaglietta già pronta, senza numeri scritti: il bambino conta le cannucce e poi risponde a tre domande «Se aggiungo…, arrivo a…» oppure «Se tolgo…, arrivo a…». Sempre senza cambio: aggiungendo non si lega un nuovo mazzetto, togliendo non si slega nessun mazzetto. I numeri cambiano ogni volta che premi il pulsante.</p>
+    <div class="row">
+      <div class="group">
+        <span class="lbl">Operazione</span>
+        <div class="seg speed" role="radiogroup" aria-label="Operazione">
+          <input type="radio" name="pop" id="po-add" value="add" checked><label for="po-add">aggiungo</label>
+          <input type="radio" name="pop" id="po-sub" value="sub"><label for="po-sub">tolgo</label>
+          <input type="radio" name="pop" id="po-mix" value="mix"><label for="po-mix">misto</label>
+        </div>
+      </div>
+      <div class="group">
+        <span class="lbl">Cosa aggiungo o tolgo</span>
+        <div class="seg speed" role="radiogroup" aria-label="Cosa aggiungo o tolgo">
+          <input type="radio" name="pmode" id="pm-mix" value="mix" checked><label for="pm-mix">decine e unità</label>
+          <input type="radio" name="pmode" id="pm-tens" value="tens"><label for="pm-tens">solo decine</label>
+          <input type="radio" name="pmode" id="pm-units" value="units"><label for="pm-units">solo unità</label>
+          <input type="radio" name="pmode" id="pm-any" value="any"><label for="pm-any">di tutto un po'</label>
+        </div>
+      </div>
+      <div class="group">
+        <span class="lbl">Tovagliette</span>
+        <div class="seg speed" role="radiogroup" aria-label="Numero di tovagliette">
+          <input type="radio" name="pcount" id="pc-3" value="3"><label for="pc-3">3 (1 pagina)</label>
+          <input type="radio" name="pcount" id="pc-6" value="6" checked><label for="pc-6">6 (2 pagine)</label>
+          <input type="radio" name="pcount" id="pc-9" value="9"><label for="pc-9">9 (3 pagine)</label>
+        </div>
+      </div>
+      <label class="check" for="psol"><input type="checkbox" id="psol" checked> Aggiungi la pagina delle soluzioni</label>
+      <button type="button" id="pdfBtn" class="primary">Genera PDF</button>
+    </div>
+    <p id="pdfStatus" class="note" role="status"></p>
+  </section>
+</div>
+
+<script>
+(()=>{
+const W=1180,H=760;
+const cv=document.getElementById('scene');
+const ctx=cv.getContext('2d');
+let scale=1;
+const staticLayer=document.createElement('canvas');
+
+/* ---------- geometry ---------- */
+const SL=220, SWD=13, PAD=10, SS=3;
+const Y0=184, Y1=426;
+const unitSlot=i=>({x:552+(i%10)*34, y:i<10?Y0:Y1});
+const tenSlot=j=>({x:130+(j%5)*84, y:j<5?Y0:Y1});
+const BOXL={x:1048,y:470}, BOXB={x:1048,y:196};
+const HOME={L:{x:330,y:728},R:{x:770,y:728}};
+const UNIT_C=707;
+
+/* ---------- helpers ---------- */
+const lerp=(a,b,t)=>a+(b-a)*t;
+const rand=(a,b)=>a+Math.random()*(b-a);
+const eio=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const lin=t=>t;
+const rk=()=>Math.random()<.55?'nero':'avana';
+const removeFrom=(arr,o)=>{const i=arr.indexOf(o); if(i>=0) arr.splice(i,1);};
+
+/* ---------- straw sprites ---------- */
+function makeSprite(kind){
+  const c=document.createElement('canvas');
+  c.width=(SWD+PAD*2)*SS; c.height=(SL+PAD*2)*SS;
+  const g=c.getContext('2d'); g.scale(SS,SS); g.translate(PAD+SWD/2,PAD+SL/2);
+  const base=kind==='nero'?'#f6f6f2':'#f4f1e8';
+  const stripe=kind==='nero'?'#2a2b2e':'#c7b28c';
+  const shape=()=>{g.beginPath(); g.roundRect(-SWD/2,-SL/2,SWD,SL,2);};
+  g.save(); g.shadowColor='rgba(30,40,15,.33)'; g.shadowBlur=3; g.shadowOffsetX=2.5; g.shadowOffsetY=3.5;
+  shape(); g.fillStyle=base; g.fill(); g.restore();
+  g.save(); shape(); g.clip();
+  g.fillStyle=stripe;
+  for(let y=-SL/2-30;y<SL/2+30;y+=22){
+    g.beginPath(); g.moveTo(-SWD/2,y); g.lineTo(SWD/2,y-13); g.lineTo(SWD/2,y-13+10.5); g.lineTo(-SWD/2,y+10.5); g.closePath(); g.fill();
+  }
+  if(kind==='avana'){
+    for(let k=0;k<160;k++){ g.fillStyle=`rgba(110,85,50,${rand(.15,.4)})`; g.beginPath(); g.arc(rand(-SWD/2,SWD/2),rand(-SL/2,SL/2),rand(.2,.5),0,7); g.fill(); }
+  }
+  const gr=g.createLinearGradient(-SWD/2,0,SWD/2,0);
+  gr.addColorStop(0,'rgba(0,0,0,.30)'); gr.addColorStop(.32,'rgba(255,255,255,.28)');
+  gr.addColorStop(.55,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(0,0,0,.34)');
+  g.fillStyle=gr; g.fillRect(-SWD/2,-SL/2,SWD,SL);
+  g.fillStyle='rgba(0,0,0,.18)'; g.fillRect(-SWD/2,-SL/2,SWD,1.3); g.fillRect(-SWD/2,SL/2-1.3,SWD,1.3);
+  g.restore();
+  return c;
+}
+const SPR={nero:makeSprite('nero'),avana:makeSprite('avana')};
+
+function drawStraw(g,kind,x,y,rot,alpha=1,sc=1){
+  g.save(); g.globalAlpha=alpha; g.translate(x,y); g.rotate(rot); if(sc!==1) g.scale(sc,sc);
+  g.drawImage(SPR[kind],-SWD/2-PAD,-SL/2-PAD,SWD+2*PAD,SL+2*PAD);
+  g.restore();
+}
+function bundleItems(kinds){
+  return kinds.map((k,i)=>{const back=i<5,c=i%5;
+    return {kind:k,dx:(c-2)*13+(back?6.5:0),dy:(back?-5:4)+rand(-7,7),r:rand(-.025,.025)};});
+}
+function makeBundle(x,y,band=1){
+  const kinds=Array.from({length:10},rk);
+  return {x,y,rot:rand(-.02,.02),items:bundleItems(kinds),band,bandY:22,bandA:1,a:1,lift:0};
+}
+function drawBand(g,b){
+  if(b.band<=0||b.bandA<=0) return;
+  g.save(); g.globalAlpha*=b.bandA;
+  const y=b.bandY, x0=-40, x1=x0+80*b.band;
+  g.lineCap='round'; g.lineJoin='round';
+  const path=()=>{g.beginPath(); let first=true;
+    for(let x=x0;x<x1;x+=4){const yy=y+3*(1-(x/40)**2); first?g.moveTo(x,yy):g.lineTo(x,yy); first=false;}
+    g.lineTo(x1,y+3*(1-(x1/40)**2));};
+  path(); g.strokeStyle='rgba(20,60,50,.35)'; g.lineWidth=7; g.stroke();
+  path(); g.strokeStyle='#4db8a7'; g.lineWidth=4.6; g.stroke();
+  g.translate(0,-1.2); path(); g.strokeStyle='rgba(225,255,248,.75)'; g.lineWidth=1.2; g.stroke();
+  g.restore();
+}
+function drawBundle(g,b){
+  g.save(); g.globalAlpha=b.a; g.translate(b.x,b.y); g.rotate(b.rot);
+  const sc=1+.05*(b.lift||0); if(sc!==1) g.scale(sc,sc);
+  for(const it of b.items){
+    g.save(); g.translate(it.dx,it.dy); g.rotate(it.r);
+    g.drawImage(SPR[it.kind],-SWD/2-PAD,-SL/2-PAD,SWD+2*PAD,SL+2*PAD); g.restore();
+  }
+  drawBand(g,b);
+  g.restore();
+}
+
+/* ---------- static scene: table, mat, box ---------- */
+const boxPile={
+  bundles:[makeBundle(1000,196),makeBundle(1090,202)],
+  loose:Array.from({length:11},(_,i)=>({kind:rk(),x:962+i*17+rand(-4,4),y:470+rand(-22,22),rot:rand(-.28,.28)}))
+};
+function roundRect(g,x,y,w,h,r,fill){g.beginPath(); g.roundRect(x,y,w,h,r); g.fillStyle=fill; g.fill();}
+function drawStatic(g){
+  // table
+  g.fillStyle='#e3e1da'; g.fillRect(0,0,W,H);
+  const vg=g.createRadialGradient(W/2,H/2,200,W/2,H/2,820);
+  vg.addColorStop(0,'rgba(255,255,255,.18)'); vg.addColorStop(1,'rgba(90,80,60,.14)');
+  g.fillStyle=vg; g.fillRect(0,0,W,H);
+  // mat paper
+  g.save(); g.shadowColor='rgba(50,45,30,.22)'; g.shadowBlur=14; g.shadowOffsetY=5;
+  roundRect(g,30,14,882,688,8,'#fbfbf6'); g.restore();
+  g.fillStyle='#1f8aa3'; g.font='700 25px "Baloo 2", "Trebuchet MS", sans-serif'; g.textBaseline='middle';
+  g.fillText('ABACO  DECINE  E  UNITÀ',58,39);
+  // cells
+  roundRect(g,58,62,466,500,3,'#b7d263');
+  roundRect(g,530,62,352,500,3,'#d2e39e');
+  roundRect(g,58,566,466,40,3,'#a4c34a');
+  roundRect(g,530,566,352,40,3,'#bdd57c');
+  roundRect(g,58,610,466,68,3,'#c6dd84');
+  roundRect(g,530,610,352,68,3,'#dbe9b3');
+  g.fillStyle='#2b3818'; g.font='500 25px "Baloo 2", "Trebuchet MS", sans-serif'; g.textAlign='center';
+  g.fillText('decine',291,587); g.fillText('unità',706,587);
+  g.textAlign='left';
+  // laminate gloss
+  g.save(); g.beginPath(); g.roundRect(30,14,882,688,8); g.clip();
+  const gl=g.createLinearGradient(100,0,700,700);
+  gl.addColorStop(0,'rgba(255,255,255,0)'); gl.addColorStop(.42,'rgba(255,255,255,0)');
+  gl.addColorStop(.47,'rgba(255,255,255,.16)'); gl.addColorStop(.52,'rgba(255,255,255,0)');
+  gl.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=gl; g.fillRect(30,14,882,688); g.restore();
+  // box
+  g.save(); g.shadowColor='rgba(50,40,20,.28)'; g.shadowBlur=12; g.shadowOffsetY=5;
+  roundRect(g,930,14,236,688,6,'#c89e63'); g.restore();
+  roundRect(g,944,28,208,660,4,'#a47a45');
+  const bg=g.createLinearGradient(0,28,0,688); bg.addColorStop(0,'rgba(0,0,0,.18)'); bg.addColorStop(.12,'rgba(0,0,0,0)');
+  g.fillStyle=bg; g.fillRect(944,28,208,660);
+  g.fillStyle='rgba(60,38,15,.55)'; g.font='700 22px "Baloo 2", "Trebuchet MS", sans-serif'; g.textAlign='center';
+  g.fillText('SCATOLA',1048,654); g.textAlign='left';
+  boxPile.loose.forEach(s=>drawStraw(g,s.kind,s.x,s.y,s.rot));
+  boxPile.bundles.forEach(b=>drawBundle(g,b));
+}
+
+/* ---------- live state ---------- */
+let straws=[], bundles=[], unitsList=[], tensList=[];
+let D=0, U=0;
+const flash={d:0,u:0};
+const bump=w=>{flash[w]=performance.now();};
+const hands={
+  L:{id:'L',x:HOME.L.x,y:HOME.L.y,sx:250,sy:1090,mirror:true,curl:0},
+  R:{id:'R',x:HOME.R.x,y:HOME.R.y,sx:850,sy:1090,mirror:false,curl:0}
+};
+const L=hands.L, R=hands.R;
+
+/* ---------- hands ---------- */
+const SKIN='#f1c4a0', EDGE='#c78c66', NAIL='#f9e2d6', SLEEVE='#3f6fb4', CUFF='#335d9c';
+function handShapes(g,curl,fill,stroke){
+  const fingers=[[-17,46,-0.10],[-5.5,52,-0.03],[6,49,0.04],[17,40,0.12]];
+  const shapes=[];
+  // thumb
+  g.save(); g.translate(-22,54); g.rotate(-0.95+0.55*curl);
+  const tl=38*(1-.25*curl);
+  g.beginPath(); g.roundRect(-7.5,-tl,15,tl+10,7.5); g.fillStyle=fill; g.fill(); if(stroke){g.strokeStyle=stroke; g.stroke();
+    g.fillStyle=NAIL; g.beginPath(); g.ellipse(0,-tl+7,4.2,5.5,0,0,7); g.fill();}
+  g.restore();
+  for(const [x,len,sp] of fingers){
+    g.save(); g.translate(x,20); g.rotate(sp*(1-curl));
+    const l=len*(1-.45*curl);
+    g.beginPath(); g.roundRect(-6.3,-l,12.6,l+8,6.3); g.fillStyle=fill; g.fill();
+    if(stroke){g.strokeStyle=stroke; g.stroke();
+      g.fillStyle=NAIL; g.beginPath(); g.ellipse(0,-l+6.5,3.6,5,0,0,7); g.fill();}
+    g.restore();
+  }
+  g.beginPath(); g.roundRect(-27,10,54,74,22); g.fillStyle=fill; g.fill();
+  if(stroke){ g.strokeStyle=stroke; g.stroke();
+    g.strokeStyle='rgba(180,120,90,.35)'; g.lineWidth=1;
+    for(const [x] of [[-17],[-5.5],[6],[17]]){g.beginPath(); g.arc(x,24,3,Math.PI*1.1,Math.PI*1.9); g.stroke();}
+  }
+}
+function drawHand(g,h){
+  const HS=1.3;
+  const dx=h.x-h.sx, dy=h.y-h.sy, len=Math.hypot(dx,dy)||1, ux=dx/len, uy=dy/len;
+  const ang=Math.atan2(uy,ux)+Math.PI/2;
+  const wx=h.x-ux*92*HS, wy=h.y-uy*92*HS;
+  const fx=wx-ux*55, fy=wy-uy*55;
+  const line=(a,b,c,d)=>{g.beginPath(); g.moveTo(a,b); g.lineTo(c,d); g.stroke();};
+  g.save(); g.lineCap='round';
+  g.strokeStyle='rgba(50,40,20,.14)'; g.lineWidth=84; line(fx+12,fy+16,h.sx+12,h.sy+16);
+  g.strokeStyle='rgba(50,40,20,.12)'; g.lineWidth=48; line(wx+10,wy+13,fx+10,fy+13);
+  g.strokeStyle=SKIN; g.lineWidth=46; line(wx,wy,fx,fy);
+  g.strokeStyle=EDGE; g.lineWidth=1;
+  g.strokeStyle=SLEEVE; g.lineWidth=82; line(fx-ux*10,fy-uy*10,h.sx,h.sy);
+  g.strokeStyle=CUFF; g.lineWidth=84; line(fx,fy,fx-ux*8,fy-uy*8);
+  g.strokeStyle='rgba(255,255,255,.12)'; g.lineWidth=2;
+  for(let k=-30;k<=30;k+=10){ const px=-uy, py=ux; line(fx+px*k,fy+py*k,fx+px*k-ux*12,fy+py*k-uy*12); }
+  g.restore();
+  // shadow
+  g.save(); g.translate(h.x+8,h.y+11); g.rotate(ang); g.scale(HS*(h.mirror?-1:1),HS);
+  g.globalAlpha=.16; handShapes(g,h.curl,'#3a2c1a',null); g.restore();
+  // hand
+  g.save(); g.translate(h.x,h.y); g.rotate(ang); g.scale(HS*(h.mirror?-1:1),HS);
+  g.lineWidth=1.2/HS; handShapes(g,h.curl,SKIN,EDGE); g.restore();
+}
+
+/* ---------- render loop ---------- */
+function resize(){
+  const w=cv.clientWidth; if(!w) return;
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=Math.round(w*dpr); cv.height=Math.round(w*H/W*dpr); scale=cv.width/W;
+  staticLayer.width=cv.width; staticLayer.height=cv.height;
+  const sg=staticLayer.getContext('2d'); sg.setTransform(scale,0,0,scale,0,0); drawStatic(sg);
+}
+function drawDigits(g,now){
+  const cells=[['d',D,291],['u',U,706]];
+  for(const [k,v,x] of cells){
+    const f=Math.max(0,1-(now-flash[k])/450);
+    g.save(); g.translate(x,645); g.scale(1+.3*f,1+.3*f);
+    g.fillStyle=f>0?`rgba(28,124,144,${.6+.4*f})`:'#24321a';
+    g.font='700 46px "Baloo 2", "Trebuchet MS", sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+    g.fillText(String(v),0,3); g.restore();
+  }
+}
+function frame(now){
+  ctx.setTransform(1,0,0,1,0,0);
+  if(staticLayer.width) ctx.drawImage(staticLayer,0,0);
+  ctx.setTransform(scale,0,0,scale,0,0);
+  drawDigits(ctx,now);
+  for(const s of straws) drawStraw(ctx,s.kind,s.x,s.y,s.rot,s.a,1+.06*(s.lift||0));
+  for(const b of bundles) drawBundle(ctx,b);
+  drawHand(ctx,L); drawHand(ctx,R);
+  if(paused){
+    ctx.save(); ctx.fillStyle='rgba(28,124,144,.92)'; ctx.beginPath(); ctx.roundRect(566,19,322,40,12); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='700 27px "Baloo 2", "Trebuchet MS", sans-serif'; ctx.fillText(pauseLabel,727,41); ctx.restore();
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- tweening ---------- */
+let speed=1, abortFlag=false;
+const ABORT={abort:true};
+let paused=false, resumeWaiters=[];
+function tween(ms,fn,ease=eio){
+  return new Promise((res,rej)=>{
+    const d=Math.max(16,ms/speed); let el=0, last=performance.now();
+    function step(now){
+      if(abortFlag){rej(ABORT);return;}
+      if(!paused) el+=now-last; last=now;
+      if(paused){requestAnimationFrame(step);return;}
+      const t=Math.min(1,el/d); fn(ease(t));
+      t<1?requestAnimationFrame(step):res();
+    }
+    requestAnimationFrame(step);
+  });
+}
+const pause=ms=>tween(ms,()=>{});
+function moveHand(h,x,y,ms){const x0=h.x,y0=h.y; return tween(ms,t=>{h.x=lerp(x0,x,t); h.y=lerp(y0,y,t)-Math.sin(t*Math.PI)*8;});}
+function grip(h,v,ms=110){const c0=h.curl; return tween(ms,t=>{h.curl=lerp(c0,v,t);});}
+const home=(h,ms=450)=>moveHand(h,HOME[h.id].x,HOME[h.id].y,ms);
+function carry(h,objs,x,y,ms,rot){
+  const x0=h.x,y0=h.y;
+  const offs=objs.map(o=>({o,dx:o.x-x0,dy:o.y-y0,r0:o.rot}));
+  return tween(ms,t=>{
+    h.x=lerp(x0,x,t); h.y=lerp(y0,y,t);
+    for(const k of offs){k.o.x=h.x+k.dx; k.o.y=h.y+k.dy; if(rot!==undefined) k.o.rot=lerp(k.r0,rot,t); k.o.lift=Math.sin(t*Math.PI);}
+  });
+}
+function toTop(arr,o){removeFrom(arr,o); arr.push(o);}
+
+/* ---------- words ---------- */
+const capEl=document.getElementById('caption');
+const eqEl=document.getElementById('eq');
+const say=t=>{capEl.textContent=t;};
+const dec=n=>n===1?'1 decina':`${n} decine`;
+const can=n=>n===1?'1 cannuccia':`${n} cannucce`;
+const maz=n=>n===1?'1 mazzetto':`${n} mazzetti`;
+const opSym=o=>o==='+'?'+':'−';
+
+/* ---------- actions ---------- */
+async function placeStraw(){
+  await moveHand(R,BOXL.x+rand(-40,40),BOXL.y+rand(-18,18),340);
+  await grip(R,.75,90);
+  const s={kind:rk(),x:R.x,y:R.y,rot:rand(-.25,.25),r:rand(-.035,.035),a:1,lift:0};
+  straws.push(s);
+  const t=unitSlot(unitsList.length);
+  unitsList.push(s);
+  await carry(R,[s],t.x,t.y,470,s.r);
+  s.lift=0; U=unitsList.length; bump('u');
+  await grip(R,0,80);
+}
+async function tieTen(){
+  say('Ho 10 cannucce sciolte: le raccolgo e le lego con l\'elastico.');
+  const group=unitsList.splice(0,10);
+  const cx=UNIT_C, cy=Y0;
+  await Promise.all([moveHand(L,cx-80,cy+45,450),moveHand(R,cx+80,cy+45,450)]);
+  await Promise.all([grip(L,.45),grip(R,.45)]);
+  const items=bundleItems(group.map(s=>s.kind));
+  const st=group.map(s=>({x:s.x,y:s.y,r:s.rot}));
+  await tween(720,t=>{
+    L.x=lerp(cx-80,cx-48,t); R.x=lerp(cx+80,cx+48,t);
+    group.forEach((s,i)=>{s.x=lerp(st[i].x,cx+items[i].dx,t); s.y=lerp(st[i].y,cy+items[i].dy,t); s.rot=lerp(st[i].r,items[i].r,t);});
+  });
+  group.forEach(s=>removeFrom(straws,s));
+  const b={x:cx,y:cy,rot:0,items,band:0,bandY:22,bandA:1,a:1,lift:0};
+  bundles.push(b);
+  await Promise.all([moveHand(L,cx,cy-45,260),moveHand(R,cx+46,cy+55,260),grip(R,.3,200)]);
+  await grip(L,.8,100);
+  say('Giro l\'elastico: 10 unità diventano 1 decina.');
+  await tween(1050,t=>{
+    b.band=t; const a=-Math.PI/2+t*Math.PI*4;
+    R.x=cx+Math.cos(a)*52; R.y=cy+62+Math.sin(a)*16;
+  },lin);
+  U=unitsList.length; bump('u');
+  const slot=tenSlot(tensList.length);
+  say('Porto il mazzetto al posto delle decine.');
+  await Promise.all([carry(L,[b],slot.x,slot.y-45,760,0),grip(R,0,120).then(()=>home(R,520))]);
+  b.lift=0; tensList.push(b); D=tensList.length; bump('d');
+  await grip(L,0,90);
+  if(unitsList.length){
+    say(unitsList.length===1?'La cannuccia rimasta sale nella prima riga delle unità.':`Le ${can(unitsList.length)} rimaste salgono nella prima riga delle unità.`);
+    const st=unitsList.map(s=>({x:s.x,y:s.y}));
+    await Promise.all([home(L,420),tween(700,t=>{unitsList.forEach((s,i)=>{const sl=unitSlot(i); s.x=lerp(st[i].x,sl.x,t); s.y=lerp(st[i].y,sl.y,t);});})]);
+    U=unitsList.length; bump('u');
+  } else await home(L,420);
+}
+async function untieOne(){
+  const b=tensList[tensList.length-1];
+  await moveHand(L,b.x,b.y-45,480); await grip(L,.8,100);
+  tensList.pop(); D=tensList.length; bump('d'); toTop(bundles,b);
+  const cx=UNIT_C, cy=Y1;
+  await carry(L,[b],cx,cy-45,780,0); b.lift=0;
+  say('Tolgo l\'elastico: 1 decina torna a essere 10 unità.');
+  await moveHand(R,cx+36,cy+b.bandY+34,420); await grip(R,.7,100);
+  await tween(760,t=>{b.bandY=lerp(22,-150,t); R.y=cy+b.bandY+34; b.bandA=t>.72?1-(t-.72)/.28:1;});
+  const ns=b.items.map(it=>({kind:it.kind,x:cx+it.dx,y:cy+it.dy,rot:it.r,r:rand(-.035,.035),a:1,lift:0}));
+  removeFrom(bundles,b); straws.push(...ns);
+  await Promise.all([grip(L,0,100),grip(R,0,100)]);
+  say('Allargo le cannucce sciolte sulle unità.');
+  const base=unitsList.length;
+  const st=ns.map(s=>({x:s.x,y:s.y,r:s.rot}));
+  const lx=L.x, ly=L.y, rx=R.x, ry=R.y;
+  await tween(820,t=>{
+    ns.forEach((s,i)=>{const sl=unitSlot(base+i); s.x=lerp(st[i].x,sl.x,t); s.y=lerp(st[i].y,sl.y,t); s.rot=lerp(st[i].r,s.r,t);});
+    L.x=lerp(lx,cx-120,t); L.y=lerp(ly,cy+20,t); R.x=lerp(rx,cx+120,t); R.y=lerp(ry,cy+20,t);
+  });
+  unitsList.push(...ns); U=unitsList.length; bump('u');
+  await Promise.all([home(L,450),home(R,450)]);
+}
+async function removeStraw(){
+  const s=unitsList[unitsList.length-1];
+  await moveHand(R,s.x,s.y,380); await grip(R,.75,90);
+  unitsList.pop(); U=unitsList.length; bump('u'); toTop(straws,s);
+  await carry(R,[s],BOXL.x+rand(-40,40),BOXL.y+rand(-15,15),520,rand(-.25,.25));
+  await tween(160,t=>{s.a=1-t;}); removeFrom(straws,s);
+  await grip(R,0,80);
+}
+async function removeBundle(){
+  const b=tensList[tensList.length-1];
+  await moveHand(R,b.x,b.y-45,460); await grip(R,.8,100);
+  tensList.pop(); D=tensList.length; bump('d'); toTop(bundles,b);
+  await carry(R,[b],BOXB.x+rand(-30,30),BOXB.y-45,760,rand(-.05,.05));
+  await tween(200,t=>{b.a=1-t;}); removeFrom(bundles,b);
+  await grip(R,0,90);
+}
+async function addReadyBundle(){
+  await moveHand(R,BOXB.x+rand(-30,30),BOXB.y-45,440); await grip(R,.8,100);
+  const b=makeBundle(R.x,R.y+45); bundles.push(b);
+  const sl=tenSlot(tensList.length);
+  await carry(R,[b],sl.x,sl.y-45,760,0); b.lift=0;
+  tensList.push(b); D=tensList.length; bump('d');
+  await grip(R,0,90);
+}
+
+/* ---------- procedures ---------- */
+const readyEl=document.getElementById('ready');
+async function addStraws(n,label){
+  for(let i=1;i<=n;i++){
+    say(`${label}: ${i} di ${n}.`);
+    await placeStraw();
+    if(unitsList.length===10) await tieTen();
+  }
+}
+async function build(n,quick){
+  const d=Math.floor(n/10), u=n%10;
+  if(quick||readyEl.checked){
+    for(let k=1;k<=d;k++){ say(`Prendo un mazzetto già pronto dalla scatola: ${k} di ${d}.`); await addReadyBundle(); }
+    if(u) await addStraws(u,'Metto le cannucce sciolte sulle unità');
+  } else {
+    await addStraws(n,'Conto le cannucce');
+  }
+  await Promise.all([home(L),home(R)]);
+}
+async function add(m){
+  const d=Math.floor(m/10), u=m%10;
+  say(`Devo aggiungere ${m}: ${dec(d)} e ${u} unità.`); await pause(900);
+  for(let k=1;k<=d;k++){ say(`Aggiungo le decine: prendo un mazzetto dalla scatola (${k} di ${d}).`); await addReadyBundle(); }
+  for(let k=1;k<=u;k++){ say(`Aggiungo le unità: ${k} di ${u}.`); await placeStraw(); }
+  if(unitsList.length>=10){
+    await Promise.all([home(L),home(R)]);
+    say(`Sulle unità ora ci sono ${can(unitsList.length)}: sono più di 9, quindi 10 le posso legare in un mazzetto.`);
+    await pause(1600);
+    await tieTen();
+  }
+  await Promise.all([home(L),home(R)]);
+}
+async function sub(m){
+  const d=Math.floor(m/10), u=m%10;
+  say(`Devo togliere ${m}: ${dec(d)} e ${u} unità.`); await pause(900);
+  for(let k=1;k<=d;k++){ say(`Tolgo un mazzetto da 10: ${k} di ${d}.`); await removeBundle(); }
+  if(u){
+    if(U<u){
+      say(`Sulle unità ci sono ${can(U)} sciolte, me ne servono ${u}: slego un mazzetto.`);
+      await pause(1100);
+      await untieOne();
+    }
+    for(let k=1;k<=u;k++){ say(`Tolgo le cannucce sciolte: ${k} di ${u}.`); await removeStraw(); }
+  }
+  await Promise.all([home(L),home(R)]);
+}
+async function clearAnim(){
+  say('Libero la tovaglietta.');
+  const all=[...straws,...bundles];
+  await tween(450,t=>{all.forEach(o=>o.a=1-t);});
+  setInstant(0);
+}
+function setInstant(n){
+  n=Math.max(0,Math.min(99,n|0));
+  straws=[]; bundles=[]; unitsList=[]; tensList=[];
+  const d=Math.floor(n/10), u=n%10;
+  for(let j=0;j<d;j++){const sl=tenSlot(j); const b=makeBundle(sl.x,sl.y); bundles.push(b); tensList.push(b);}
+  for(let i=0;i<u;i++){const sl=unitSlot(i); const r=rand(-.035,.035); const s={kind:rk(),x:sl.x,y:sl.y,rot:r,r,a:1,lift:0}; straws.push(s); unitsList.push(s);}
+  D=d; U=u;
+}
+function homeInstant(){for(const h of [L,R]){h.x=HOME[h.id].x; h.y=HOME[h.id].y; h.curl=0;}}
+function describe(n){const d=Math.floor(n/10),u=n%10; return `${n} = ${dec(d)} e ${u} unità.`;}
+
+/* ---------- UI ---------- */
+const form=document.getElementById('ctrl');
+const startEl=document.getElementById('start'), secondEl=document.getElementById('second');
+const goEl=document.getElementById('go'), skipEl=document.getElementById('skip'), resetEl=document.getElementById('reset');
+const msgEl=document.getElementById('msg'), secondWrap=document.getElementById('secondWrap');
+const getOp=()=>form.querySelector('input[name="op"]:checked').value;
+function syncOp(){ secondWrap.style.visibility=getOp()===''?'hidden':'visible'; }
+form.querySelectorAll('input[name="op"]').forEach(r=>r.addEventListener('change',syncOp));
+form.querySelectorAll('input[name="speed"]').forEach(r=>r.addEventListener('change',()=>{speed=parseFloat(r.value);}));
+if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){document.getElementById('sp-3').checked=true; speed=2.2;}
+
+let running=false, pauseLabel='PAUSA';
+const pauseEl=document.getElementById('pause'), stopBeforeEl=document.getElementById('stopBefore'), stageEl=document.querySelector('.stage');
+function setPaused(v,label='PAUSA'){
+  if(!running) v=false;
+  paused=v; pauseLabel=label;
+  pauseEl.textContent=v?'Riprendi':'Pausa'; pauseEl.setAttribute('aria-pressed',String(v));
+  stageEl.classList.toggle('is-paused',v);
+  if(!v){const w=resumeWaiters; resumeWaiters=[]; w.forEach(f=>f());}
+}
+async function checkpoint(label,text){
+  say(text); setPaused(true,label);
+  await new Promise(r=>resumeWaiters.push(r));
+  if(abortFlag) throw ABORT;
+}
+pauseEl.addEventListener('click',()=>{ if(running) setPaused(!paused); });
+document.addEventListener('keydown',e=>{
+  if(!running) return;
+  if(e.target.matches('input,button,select,textarea')) return;
+  if(e.code==='Space'||e.key==='p'||e.key==='P'){ e.preventDefault(); setPaused(!paused); }
+});
+function setBusy(b){running=b; pauseEl.disabled=!b; if(!b) setPaused(false); goEl.disabled=b; resetEl.disabled=b; skipEl.disabled=!b; startEl.disabled=b; secondEl.disabled=b;
+  document.querySelectorAll('.examples button').forEach(x=>x.disabled=b);}
+function readInt(el){const v=el.value.trim(); if(v===''||!/^\d+$/.test(v)) return null; return parseInt(v,10);}
+
+async function run(A,op,B){
+  msgEl.textContent='';
+  const fail=t=>{msgEl.textContent=t; say(t); eqEl.textContent='?';};
+  if(A===null||A>99){fail('Il numero di partenza deve essere un numero intero da 0 a 99.'); return;}
+  if(op&&(B===null||B>99)){fail('Il secondo numero deve essere un numero intero da 0 a 99.'); return;}
+  const target=op==='+'?A+B:op==='-'?A-B:A;
+  if(target>99){fail(`${A} + ${B} fa ${target}: sulla tovaglietta ci sono solo decine e unità, quindi il risultato deve arrivare al massimo a 99.`); return;}
+  if(target<0){fail(`Da ${A} cannucce non posso toglierne ${B}: ne mancherebbero ${-target}.`); return;}
+  setBusy(true);
+  eqEl.innerHTML=op?`${A} ${opSym(op)} ${B} = <span class="q">?</span>`:`${A}`;
+  try{
+    const cur=D*10+U;
+    const clean=unitsList.length<10;
+    if(A!==cur||!clean){
+      if(straws.length||bundles.length) await clearAnim();
+      if(A>0){ say(`Compongo ${A}.`); await pause(500); await build(A,!!op); }
+      say(`Sulla tovaglietta c'è ${describe(A)}`); await pause(op?1100:0);
+    }
+    if(op&&B>0&&stopBeforeEl.checked){
+      await checkpoint('QUANTO FARÀ?',`Sulla tovaglietta c'è ${A}. Secondo voi, quanto farà ${A} ${opSym(op)} ${B}? Quando siete pronti, premete Riprendi.`);
+    }
+    if(op==='+'&&B>0) await add(B);
+    if(op==='-'&&B>0) await sub(B);
+    say(op?`${A} ${opSym(op)} ${B} = ${target}. Sulla tovaglietta: ${dec(Math.floor(target/10))} e ${target%10} unità.`:`Ecco ${describe(target)}`);
+  }catch(e){
+    if(e!==ABORT) console.error(e);
+    abortFlag=false; setInstant(target); homeInstant();
+    say(op?`${A} ${opSym(op)} ${B} = ${target}. Sulla tovaglietta: ${dec(Math.floor(target/10))} e ${target%10} unità.`:`Ecco ${describe(target)}`);
+  }
+  eqEl.innerHTML=op?`${A} ${opSym(op)} ${B} = <span class="q">${target}</span>`:`${target}`;
+  startEl.value=target;
+  setBusy(false);
+}
+form.addEventListener('submit',e=>{e.preventDefault(); start();});
+goEl.addEventListener('click',()=>start());
+[startEl,secondEl].forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault(); start();}}));
+function start(){
+  if(running) return;
+  const norm=v=>v.replace(/\s+/g,'').replace(/[−–—]/g,'-');
+  const a=norm(startEl.value), b=norm(secondEl.value);
+  let m=a.match(/^(\d{1,3})([+\-])(\d{1,3})$/);
+  if(m){ // operazione scritta tutta nel primo campo, es. 44-6
+    startEl.value=m[1]; secondEl.value=m[3];
+    form.querySelector(`input[name="op"][value="${m[2]}"]`).checked=true; syncOp();
+    run(parseInt(m[1],10),m[2],parseInt(m[3],10)); return;
+  }
+  let op=getOp();
+  m=b.match(/^([+\-])(\d{1,3})$/);
+  if(op&&m){ // segno scritto nel secondo campo, es. -6
+    op=m[1]; secondEl.value=m[2];
+    form.querySelector(`input[name="op"][value="${op}"]`).checked=true; syncOp();
+  }
+  const A=a===''?0:(/^\d{1,3}$/.test(a)?parseInt(a,10):null);
+  const B=m&&op?parseInt(m[2],10):(/^\d{1,3}$/.test(b)?parseInt(b,10):null);
+  run(A,op,op?B:0);
+}
+skipEl.addEventListener('click',()=>{ if(running){ abortFlag=true; setPaused(false); } });
+resetEl.addEventListener('click',()=>{ if(running) return; setInstant(0); homeInstant(); eqEl.textContent='0'; startEl.value=''; secondEl.value=''; say('La tovaglietta è vuota. Scrivi un numero e premi Avvia.'); msgEl.textContent=''; startEl.focus(); });
+document.querySelectorAll('.examples button').forEach(btn=>btn.addEventListener('click',()=>{
+  if(running) return;
+  const [a,o,b]=btn.dataset.ex.split(',');
+  startEl.value=a; secondEl.value=b||0;
+  form.querySelector(`input[name="op"][value="${o}"]`).checked=true; syncOp();
+  run(parseInt(a,10),o,o?parseInt(b,10):0);
+}));
+
+/* ---------- scheda PDF: a quanto arrivo? ---------- */
+const pdfStatus=document.getElementById('pdfStatus');
+const pRandInt=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const CROP={x:20,y:6,w:902,h:754};
+// decine e unità del numero di partenza, scelte in modo che ci siano sempre almeno 3 domande diverse senza cambio
+const START_RANGE={add:[1,6,0,6], sub:[3,9,3,9], mix:[3,6,3,6]};
+function pNewStart(op,prev){
+  const [a0,a1,b0,b1]=START_RANGE[op];
+  let s; do{ s=pRandInt(a0,a1)*10+pRandInt(b0,b1); }while(s===prev); return s;
+}
+// op: '+' o '-'; used: elenco di domande già fatte ("+23", "-12")
+function pNumber(S,mode,op,used){
+  const a=Math.floor(S/10), b=S%10;
+  for(let k=0;k<300;k++){
+    let m=mode; if(m==='any') m=['mix','tens','units'][pRandInt(0,2)];
+    let c=0,d=0;
+    if(op==='+'){
+      if(m!=='units'){ if(a>=9) continue; c=pRandInt(1,9-a); }
+      if(m!=='tens'){ if(b>=9) continue; d=pRandInt(1,9-b); }
+    } else {
+      if(m!=='units'){ if(a<1) continue; c=pRandInt(1,a); }
+      if(m!=='tens'){ if(b<1) continue; d=pRandInt(1,b); }
+    }
+    const x=c*10+d;
+    if(x>0 && !used.includes(op+x)) return x;
+  }
+  return null;
+}
+function pQuestions(S,mode,op){
+  let ops;
+  if(op==='add') ops=['+','+','+'];
+  else if(op==='sub') ops=['-','-','-'];
+  else { ops=['+','-',pRandInt(0,1)?'+':'-']; ops.sort(()=>Math.random()-.5); }
+  const used=[], qs=[];
+  for(const o of ops){ const x=pNumber(S,mode,o,used); if(x!==null){ used.push(o+x); qs.push({op:o,x}); } }
+  return qs;
+}
+function matImage(n){
+  const c=document.createElement('canvas'); c.width=CROP.w; c.height=CROP.h;
+  const g=c.getContext('2d');
+  g.fillStyle='#ffffff'; g.fillRect(0,0,c.width,c.height);
+  g.translate(-CROP.x,-CROP.y);
+  drawStatic(g);
+  const d=Math.floor(n/10), u=n%10;
+  for(let i=0;i<u;i++){const sl=unitSlot(i); drawStraw(g,rk(),sl.x,sl.y,rand(-.035,.035));}
+  for(let j=0;j<d;j++){const sl=tenSlot(j); drawBundle(g,makeBundle(sl.x,sl.y));}
+  drawHand(g,{x:HOME.L.x,y:HOME.L.y,sx:250,sy:1090,mirror:true,curl:0});
+  drawHand(g,{x:HOME.R.x,y:HOME.R.y,sx:850,sy:1090,mirror:false,curl:0});
+  return c.toDataURL('image/jpeg',0.86);
+}
+function loadLogo(){
+  return new Promise(res=>{
+    const img=new Image(); img.crossOrigin='anonymous';
+    img.onload=()=>{ try{
+      const c=document.createElement('canvas'); c.width=c.height=200; const g=c.getContext('2d');
+      g.beginPath(); g.arc(100,100,100,0,7); g.clip(); g.fillStyle='#fff'; g.fillRect(0,0,200,200);
+      const s=Math.min(200/img.width,200/img.height); g.drawImage(img,100-img.width*s/2,100-img.height*s/2,img.width*s,img.height*s);
+      res(c.toDataURL('image/png')); }catch(e){ res(null); } };
+    img.onerror=()=>res(null);
+    img.src=document.querySelector('.logo img').src;
+    setTimeout(()=>res(null),4000);
+  });
+}
+async function genPdf(){
+  if(!window.jspdf){ pdfStatus.textContent='Non riesco a caricare lo strumento per il PDF: controlla la connessione a internet e ricarica la pagina.'; return; }
+  const btn=document.getElementById('pdfBtn'); btn.disabled=true; pdfStatus.textContent='Preparo il PDF…';
+  try{
+    await document.fonts.ready;
+    const count=parseInt(document.querySelector('input[name="pcount"]:checked').value,10);
+    const mode=document.querySelector('input[name="pmode"]:checked').value;
+    const withSol=document.getElementById('psol').checked;
+    const pop=document.querySelector('input[name="pop"]:checked').value;
+    const sheet=[]; let prev=0;
+    for(let i=0;i<count;i++){
+      const s=pNewStart(pop,prev); prev=s;
+      sheet.push({s,qs:pQuestions(s,mode,pop)});
+    }
+    const logo=await loadLogo();
+    const { jsPDF }=window.jspdf;
+    const doc=new jsPDF({unit:'mm',format:'a4'});
+    const M=14, PW=210, IW=84, IH=IW*CROP.h/CROP.w, GAP=9, TOP=18, TH=8;
+    const teal=[28,124,144], red=[225,6,0];
+    for(let i=0;i<sheet.length;i++){
+      const pi=i%3;
+      if(pi===0 && i>0) doc.addPage();
+      const ty=TOP+pi*(TH+IH+GAP);
+      if(pi>0){
+        const ly=ty-GAP/2-1;
+        doc.setDrawColor(...red); doc.setLineWidth(.5); doc.setLineDashPattern([2.2,1.6],0);
+        doc.line(M,ly,PW-M,ly); doc.setLineDashPattern([],0);
+      }
+      doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(...teal);
+      doc.text('A quanto arrivo?',M,ty+4);
+      const y=ty+TH;
+      const {s,qs}=sheet[i];
+      doc.addImage(matImage(s),'JPEG',M,y,IW,IH);
+      doc.setDrawColor(200,205,190); doc.setLineWidth(.3); doc.roundedRect(M,y,IW,IH,1.5,1.5,'S');
+      const x=M+IW+8;
+      if(logo){ doc.addImage(logo,'PNG',x-0.5,y+0.5,8,8); }
+      else {
+        doc.setFillColor(...teal); doc.circle(x+3.5,y+4.5,3.5,'F');
+        doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
+        doc.text(String(i+1),x+3.5,y+5.8,{align:'center'});
+      }
+      doc.setFont('helvetica','normal'); doc.setFontSize(10.5); doc.setTextColor(30,30,30);
+      doc.text('Sulla tovaglietta ci sono ______ cannucce.',x+10,y+5.9);
+      doc.setFontSize(13);
+      let yy=y+24;
+      for(const q of qs){
+        const lead=q.op==='+'?'Se aggiungo ':'Se tolgo ';
+        doc.setFont('helvetica','normal'); doc.text(lead,x,yy);
+        const w1=doc.getTextWidth(lead);
+        doc.setFont('helvetica','bold'); doc.text(String(q.x),x+w1,yy);
+        const w2=doc.getTextWidth(String(q.x));
+        doc.setFont('helvetica','normal'); doc.text(', arrivo a ______',x+w1+w2,yy);
+        yy+=14;
+      }
+    }
+    if(withSol){
+      doc.addPage();
+      doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...teal);
+      doc.text('Soluzioni',M,20);
+      doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(30,30,30);
+      let y=32;
+      sheet.forEach(({s,qs},i)=>{
+        doc.text(`${i+1}.  Sulla tovaglietta: ${s}.   `+qs.map(q=>`${s} ${q.op} ${q.x} = ${q.op==='+'?s+q.x:s-q.x}`).join('     '),M,y);
+        y+=9;
+      });
+    }
+    doc.save(`a-quanto-arrivo-${count}-tovagliette.pdf`);
+    pdfStatus.textContent=`PDF pronto: ${count} tovagliette${withSol?' e la pagina delle soluzioni':''}. Se premi di nuovo, i numeri cambiano.`;
+  }catch(e){
+    console.error(e);
+    pdfStatus.textContent='Il PDF non è stato creato. Riprova; se succede ancora, apri la pagina dal file scaricato sul computer.';
+  }
+  btn.disabled=false;
+}
+document.getElementById('pdfBtn').addEventListener('click',genPdf);
+
+/* ---------- start ---------- */
+setInstant(0); syncOp();
+new ResizeObserver(resize).observe(cv);
+resize();
+Promise.all([document.fonts.load('700 25px "Baloo 2"'),document.fonts.load('500 25px "Baloo 2"')]).then(resize).catch(()=>{});
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

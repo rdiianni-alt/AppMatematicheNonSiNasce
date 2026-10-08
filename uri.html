@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Il Gioco di Uri</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', serif;
+    background: #f5efe0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* HEADER */
+  header {
+    width: 100%;
+    background: #c19a6b;
+    padding: 14px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+  }
+
+  .logo img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 50%;
+    border: 2px solid #f5c97a;
+  }
+
+  .logo-name {
+    color: #4a2e10;
+    font-size: 13px;
+    font-style: italic;
+    letter-spacing: 0.5px;
+    text-align: center;
+  }
+
+  h1 {
+    color: #4a2e10;
+    font-size: 22px;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  /* LEGGENDA */
+  .legend {
+    background: #fff8ec;
+    border: 2px solid #c8832a;
+    border-radius: 12px;
+    padding: 12px 24px;
+    margin: 18px auto 0;
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    color: #5a2e0a;
+    max-width: 340px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+  }
+
+  /* CARD */
+  .card-area {
+    margin: 22px auto 0;
+    width: 280px;
+    height: 340px;
+    background: #fffdf5;
+    border: 3px solid #c8832a;
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-shadow: 0 4px 18px rgba(120,60,10,0.13);
+    position: relative;
+    overflow-y: auto;
+  }
+
+  .shapes-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 10px;
+  }
+
+  canvas.shape {
+    display: block;
+  }
+
+  .start-msg {
+    color: #c8832a;
+    font-style: italic;
+    font-size: 16px;
+    text-align: center;
+  }
+
+  /* INPUT RISPOSTA */
+  .answer-area {
+    margin: 18px auto 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 280px;
+  }
+
+  .answer-area label {
+    color: #5a2e0a;
+    font-size: 15px;
+    font-weight: bold;
+  }
+
+  .answer-area input {
+    width: 100px;
+    padding: 10px;
+    font-size: 22px;
+    text-align: center;
+    border: 2px solid #c8832a;
+    border-radius: 8px;
+    background: #fffdf5;
+    color: #3a1a00;
+    outline: none;
+  }
+
+  .btn {
+    padding: 10px 28px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+    transition: background 0.2s;
+  }
+
+  .btn-check {
+    background: #c8832a;
+    color: white;
+  }
+  .btn-check:hover { background: #a0621a; }
+
+  .btn-next {
+    background: #4a7c3a;
+    color: white;
+  }
+  .btn-next:hover { background: #345a28; }
+
+  /* FEEDBACK */
+  .feedback {
+    font-size: 18px;
+    font-weight: bold;
+    min-height: 28px;
+    text-align: center;
+  }
+  .ok { color: #2e7d32; }
+  .no { color: #c62828; }
+
+  /* SCORE */
+  .score-bar {
+    margin: 14px auto 0;
+    width: 280px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: #7a3e1a;
+  }
+
+  /* TABLET DI ARGILLA decorativo */
+  @media (max-width: 480px) {
+    h1 { font-size: 17px; }
+    .legend { font-size: 13px; gap: 20px; padding: 10px 14px; }
+    .card-area { width: 95vw; height: 280px; padding: 14px; }
+    .answer-area { width: 95vw; }
+    .score-bar { width: 95vw; }
+    .btn { padding: 8px 18px; font-size: 14px; }
+    .answer-area input { font-size: 18px; width: 80px; }
+  }
+
+  .tablet-deco {
+    font-size: 11px;
+    color: #b08050;
+    margin-top: 18px;
+    font-style: italic;
+    text-align: center;
+  }
+
+  /* PULSANTE STAMPA */
+  .btn-print {
+    background: #5a7a9e;
+    color: white;
+    margin-top: 6px;
+  }
+  .btn-print:hover { background: #45607d; }
+
+  /* FOGLIO STAMPABILE (nascosto a schermo, visibile solo in stampa) */
+  #print-sheet { display: none; }
+
+  @media print {
+    body * { visibility: hidden; }
+    #print-sheet, #print-sheet * { visibility: visible; }
+    #print-sheet {
+      display: block !important;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      background: white;
+    }
+    .print-title {
+      text-align: center;
+      font-family: 'Georgia', serif;
+      font-size: 20px;
+      color: #4a2e10;
+      margin-bottom: 16px;
+    }
+    .print-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 0 10px;
+    }
+    .print-card {
+      border: 2px solid #c8832a;
+      border-radius: 10px;
+      min-height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 8px;
+      page-break-inside: avoid;
+    }
+    .print-footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .print-footer img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      border-radius: 50%;
+    }
+    .print-footer span {
+      font-family: 'Georgia', serif;
+      font-style: italic;
+      color: #4a2e10;
+      font-size: 13px;
+    }
+  }
+</style>
+<style id="app-mobile">
+a[href*="matematichenonsinasce"]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent}
+button,select,input{touch-action:manipulation}
+@media (hover:none){*:hover{transform:none!important}}
+
+body>header{display:none!important}
+@media (max-width:767px){
+body{padding:0 12px 28px}
+.legend{margin-top:12px!important;max-width:none!important;width:100%}
+.card-area{width:100%!important;max-width:460px;height:auto!important;min-height:260px;margin-top:14px!important}
+.answer-area{width:100%!important;max-width:460px}
+.answer-area label{font-size:18px!important}
+.answer-area input{width:140px!important;height:60px;font-size:30px!important;border-radius:14px!important}
+.answer-area>div[style*="display:flex"]{width:100%}
+.answer-area .btn{flex:1;height:54px;font-size:17px!important;border-radius:14px!important;padding:0!important}
+.score-bar{width:100%!important;max-width:460px;font-size:15px!important}
+.btn-print,.tablet-deco{display:none!important}
+}</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="https://matematichenonsinasce.com/" >
+    <img          src="https://raw.githubusercontent.com/rdiianni-alt/quiz-matematica-prima/fca31cdfe65286a5abbf269e23429e4ddc479c78/logo.png"
+         onerror="this.style.display='none'"
+         alt="Logo">
+    <span class="logo-name">Matematiche non si nasce</span>
+  </a>
+  <h1>🏺 Il Gioco di Uri</h1>
+</header>
+
+<!-- LEGGENDA -->
+<div class="legend">
+  <div class="legend-item">
+    <canvas id="leg-ball" width="32" height="32"></canvas>
+    <span>= 10</span>
+  </div>
+  <div class="legend-item">
+    <canvas id="leg-cone" width="32" height="44"></canvas>
+    <span>= 1</span>
+  </div>
+</div>
+
+<!-- CARD con le forme -->
+<div class="card-area" id="card">
+  <p class="start-msg">Premi "Nuova carta" per iniziare!</p>
+</div>
+
+<!-- AREA RISPOSTA -->
+<div class="answer-area">
+  <label for="ans">Che numero è?</label>
+  <input type="number" id="ans" min="1" max="99" placeholder="?" disabled>
+  <div class="feedback" id="feedback"></div>
+  <div style="display:flex;gap:12px;">
+    <button class="btn btn-check" id="btnCheck" onclick="checkAnswer()" disabled>✔ Controlla</button>
+    <button class="btn btn-next" onclick="newCard()">🎲 Nuova carta</button>
+  </div>
+</div>
+
+<!-- PUNTEGGIO -->
+<div class="score-bar">
+  <span id="scoreGood">✅ Corrette: 0</span>
+  <span id="scoreTotal">Carte: 0</span>
+</div>
+
+<button class="btn btn-print" onclick="stampaSchede()">🖨️ Stampa schede (senza soluzioni)</button>
+
+<p class="tablet-deco">Sistema numerico dei Sumeri — palline e coni di argilla</p>
+
+<!-- FOGLIO STAMPABILE -->
+<div id="print-sheet">
+  <div class="print-title">🏺 Il Gioco di Uri</div>
+  <div class="print-grid" id="printGrid"></div>
+  <div class="print-footer">
+    <img src="https://raw.githubusercontent.com/rdiianni-alt/quiz-matematica-prima/fca31cdfe65286a5abbf269e23429e4ddc479c78/logo.png" alt="Logo">
+    <span>Matematiche non si nasce</span>
+  </div>
+</div>
+
+<script>
+  // Disegna pallina nella leggenda
+  function drawBall(canvas, size) {
+    const ctx = canvas.getContext('2d');
+    const cx = size/2, cy = size/2, r = size/2 - 3;
+    const g = ctx.createRadialGradient(cx-r*0.3, cy-r*0.3, r*0.1, cx, cy, r);
+    g.addColorStop(0, '#d4855a');
+    g.addColorStop(1, '#7a3010');
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI*2);
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+
+  // Disegna cono nella leggenda
+  function drawCone(canvas, w, h) {
+    const ctx = canvas.getContext('2d');
+    const tipX = w/2, tipY = 3;
+    const baseY = h - 3, baseR = w/2 - 2;
+    const g = ctx.createLinearGradient(0, tipY, w, baseY);
+    g.addColorStop(0, '#c8722a');
+    g.addColorStop(0.5, '#a0561a');
+    g.addColorStop(1, '#7a3010');
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(tipX - baseR, baseY);
+    // ellisse base
+    ctx.ellipse(tipX, baseY, baseR, baseR*0.28, 0, Math.PI, 0);
+    ctx.closePath();
+    ctx.fillStyle = g;
+    ctx.fill();
+    // ellisse base fronte
+    ctx.beginPath();
+    ctx.ellipse(tipX, baseY, baseR, baseR*0.28, 0, 0, Math.PI*2);
+    ctx.fillStyle = '#8b4010';
+    ctx.fill();
+  }
+
+  drawBall(document.getElementById('leg-ball'), 32);
+  drawCone(document.getElementById('leg-cone'), 32, 44);
+
+  // ------- GIOCO -------
+  let correct = 0, total = 0, currentNum = 0, answered = false;
+
+  function newCard() {
+    answered = false;
+    document.getElementById('feedback').textContent = '';
+    document.getElementById('feedback').className = 'feedback';
+    const ans = document.getElementById('ans');
+    ans.value = '';
+    ans.disabled = false;
+    document.getElementById('btnCheck').disabled = false;
+    ans.focus();
+
+    // genera numero da 1 a 99 (max 9 coni + max 9 palline = 99)
+    currentNum = Math.floor(Math.random() * 99) + 1;
+    const balls = Math.floor(currentNum / 10);
+    const cones = currentNum % 10;
+
+    const card = document.getElementById('card');
+    card.innerHTML = '';
+
+    const row = document.createElement('div');
+    row.className = 'shapes-row';
+
+    for (let i = 0; i < balls; i++) {
+      const c = document.createElement('canvas');
+      c.className = 'shape';
+      c.width = 44; c.height = 44;
+      drawBall(c, 44);
+      row.appendChild(c);
+    }
+    for (let i = 0; i < cones; i++) {
+      const c = document.createElement('canvas');
+      c.className = 'shape';
+      c.width = 38; c.height = 56;
+      drawCone(c, 38, 56);
+      row.appendChild(c);
+    }
+
+    card.appendChild(row);
+    total++;
+    document.getElementById('scoreTotal').textContent = `Carte: ${total}`;
+  }
+
+  function checkAnswer() {
+    if (answered) return;
+    const val = parseInt(document.getElementById('ans').value);
+    const fb = document.getElementById('feedback');
+    if (isNaN(val)) { fb.textContent = 'Scrivi un numero!'; fb.className='feedback no'; return; }
+    answered = true;
+    document.getElementById('ans').disabled = true;
+    document.getElementById('btnCheck').disabled = true;
+    if (val === currentNum) {
+      fb.textContent = '🌟 Esatto!';
+      fb.className = 'feedback ok';
+      correct++;
+      document.getElementById('scoreGood').textContent = `✅ Corrette: ${correct}`;
+    } else {
+      fb.textContent = `❌ Era ${currentNum}. Riprova!`;
+      fb.className = 'feedback no';
+    }
+  }
+
+  // Enter per controllare
+  document.getElementById('ans').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkAnswer();
+  });
+
+  // ------- STAMPA SCHEDE (senza soluzioni) -------
+  function stampaSchede(numCarte = 21) {
+    const grid = document.getElementById('printGrid');
+    grid.innerHTML = '';
+
+    for (let i = 0; i < numCarte; i++) {
+      const num = Math.floor(Math.random() * 99) + 1;
+      const balls = Math.floor(num / 10);
+      const cones = num % 10;
+
+      const card = document.createElement('div');
+      card.className = 'print-card';
+
+      for (let j = 0; j < balls; j++) {
+        const c = document.createElement('canvas');
+        c.width = 26; c.height = 26;
+        drawBall(c, 26);
+        card.appendChild(c);
+      }
+      for (let j = 0; j < cones; j++) {
+        const c = document.createElement('canvas');
+        c.width = 22; c.height = 32;
+        drawCone(c, 22, 32);
+        card.appendChild(c);
+      }
+
+      grid.appendChild(card);
+    }
+
+    window.print();
+  }
+</script>
+</body>
+</html>

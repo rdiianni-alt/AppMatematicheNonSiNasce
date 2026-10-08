@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spesa al Supermercato</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: sans-serif; background: #f5f4ef; min-height: 100vh; }
+
+  .header { text-align: center; padding: 18px 0 10px; }
+  .logo-wrap { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 4px; }
+  .logo img { width: 60px; height: 60px; object-fit: contain; border-radius: 50%; }
+  .blog-title { font-size: 20px; font-weight: 700; color: #2e7d32; }
+  .game-title { font-size: 26px; font-weight: 800; color: #1b5e20; margin-top: 2px; }
+
+  .level-btns { display: flex; gap: 10px; justify-content: center; margin: 12px 0 0; flex-wrap: wrap; }
+  .level-btn { padding: 8px 20px; border-radius: 20px; border: 2px solid #b5a98e; background: #fff; color: #7a6a4f; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .level-btn.active { background: #7a6a4f; color: #fff; }
+
+  .container { max-width: 700px; margin: 0 auto; padding: 16px; }
+
+  .score-bar { display: flex; gap: 20px; justify-content: center; margin-bottom: 10px; }
+  .score-item { font-size: 15px; color: #555; }
+  .score-item span { font-weight: 700; color: #2e7d32; }
+
+  .steps-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 18px; }
+  .steps { display: flex; align-items: center; justify-content: center; }
+  .step-dot { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; border: 2px solid #a5d6a7; background: #fff; color: #aaa; transition: all .3s; }
+  .step-dot.active { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+  .step-dot.done { background: #a5d6a7; color: #fff; border-color: #a5d6a7; }
+  .step-line { width: 40px; height: 3px; background: #c8e6c9; }
+  .step-line.done { background: #a5d6a7; }
+  .steps-labels { display: flex; justify-content: center; margin-top: 4px; }
+  .step-lbl { width: 80px; text-align: center; font-size: 12px; color: #888; }
+  .step-lbl.active { color: #2e7d32; font-weight: 700; }
+
+  .carrello { background: #fff; border-radius: 16px; border: 2px solid #a5d6a7; padding: 16px; margin-bottom: 14px; }
+  .carrello h2 { font-size: 17px; color: #2e7d32; margin-bottom: 12px; }
+  .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .item-card { background: #f1f8e9; border-radius: 12px; border: 1.5px solid #c8e6c9; padding: 10px; text-align: center; }
+  .item-emoji { font-size: 36px; line-height: 1; }
+  .item-name { font-size: 13px; color: #555; margin: 4px 0 2px; }
+  .item-price { font-size: 15px; font-weight: 700; color: #2e7d32; }
+
+  .box { background: #fff; border-radius: 16px; border: 2px solid #a5d6a7; padding: 16px; margin-bottom: 14px; }
+  .box h2 { font-size: 17px; color: #2e7d32; margin-bottom: 12px; }
+  .box.disabled { opacity: 0.4; pointer-events: none; }
+
+  .input-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .input-row label { font-size: 15px; color: #555; }
+  .num-input { width: 110px; padding: 8px 12px; border-radius: 8px; border: 2px solid #a5d6a7; font-size: 18px; font-weight: 700; color: #1b5e20; text-align: center; }
+  .ok-btn { padding: 10px 28px; border-radius: 20px; background: #2e7d32; color: #fff; border: none; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .ok-btn:hover { background: #1b5e20; }
+
+  .banconote-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .banconota { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+  .bill { border-radius: 10px; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; min-width: 72px; height: 42px; border: 2px solid rgba(0,0,0,0.12); transition: transform .15s; user-select: none; position: relative; }
+  .bill:active { transform: scale(0.93); }
+  .b1  { background: #fffde7; color: #f9a825; border-color: #f9a825; }
+  .b2  { background: #e8f5e9; color: #388e3c; border-color: #388e3c; }
+  .b5  { background: #e3f2fd; color: #1565c0; border-color: #1565c0; }
+  .b10 { background: #fce4ec; color: #c62828; border-color: #c62828; }
+  .b20 { background: #f3e5f5; color: #6a1b9a; border-color: #6a1b9a; }
+  .b50 { background: #fff3e0; color: #e65100; border-color: #e65100; }
+  .banconota-lbl { font-size: 11px; color: #aaa; }
+
+  .pagato-box { background: #f9f9f9; border-radius: 12px; border: 1.5px solid #ddd; padding: 10px 16px; margin: 10px 0; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; }
+  .pagato-info { font-size: 15px; color: #555; }
+  .pagato-info span { font-weight: 700; color: #1b5e20; }
+  .reset-btn { padding: 6px 16px; border-radius: 10px; border: 1.5px solid #bbb; background: #fff; color: #888; font-size: 13px; cursor: pointer; }
+
+  .feedback { border-radius: 14px; padding: 14px 18px; margin-bottom: 14px; font-size: 16px; font-weight: 700; text-align: center; display: none; }
+  .feedback.ok  { background: #e8f5e9; color: #2e7d32; border: 2px solid #a5d6a7; }
+  .feedback.err { background: #ffebee; color: #c62828; border: 2px solid #ef9a9a; }
+
+  .scontrino { display: none; background: #fff; border-radius: 4px; border: 2px dashed #a5d6a7; padding: 20px; margin-bottom: 14px; font-family: 'Courier New', monospace; max-width: 340px; margin-left: auto; margin-right: auto; }
+  .scontrino .s-title { text-align: center; font-size: 16px; font-weight: 700; color: #2e7d32; margin-bottom: 4px; }
+  .scontrino .s-sub { text-align: center; font-size: 12px; color: #888; margin-bottom: 14px; }
+  .scontrino .s-row { display: flex; justify-content: space-between; font-size: 14px; color: #333; padding: 3px 0; }
+  .scontrino .s-divider { border: none; border-top: 1px dashed #ccc; margin: 8px 0; }
+  .scontrino .s-total { display: flex; justify-content: space-between; font-size: 15px; font-weight: 700; color: #1b5e20; padding: 4px 0; }
+  .scontrino .s-formula { background: #f1f8e9; border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center; font-size: 14px; color: #333; }
+  .scontrino .s-formula .s-op { font-size: 18px; font-weight: 700; color: #1b5e20; margin-top: 4px; }
+  .scontrino .s-resto { display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; color: #c62828; padding: 4px 0; margin-top: 6px; }
+
+  .btn-row { display: flex; gap: 12px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .nuovo-btn { padding: 12px 32px; border-radius: 24px; background: #8a7a5f; color: #fff; border: none; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .nuovo-btn:hover { background: #6b5e45; }
+  .pdf-btn { padding: 12px 32px; border-radius: 24px; background: #a89070; color: #fff; border: none; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .pdf-btn:hover { background: #8a7055; }
+</style>
+<style id="app-mobile">
+a[href*="matematichenonsinasce"]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent}
+button,select,input{touch-action:manipulation}
+@media (hover:none){*:hover{transform:none!important}}
+
+.header .logo-wrap,.game-title{display:none!important}
+@media (max-width:767px){
+.header{padding:12px 12px 0!important}
+.level-btns{display:grid!important;grid-template-columns:repeat(3,1fr);gap:6px!important;margin:0!important}
+.level-btn{padding:8px 4px!important;font-size:12px!important;line-height:1.2;border-radius:12px!important;min-height:48px}
+.container{padding:12px!important}
+.step-dot{width:32px!important;height:32px!important}
+.step-line{width:28px!important}
+.step-lbl{width:70px!important;font-size:11px!important}
+.carrello,.box{padding:12px!important;border-radius:14px!important}
+.carrello h2,.box h2{font-size:15px!important;margin-bottom:10px!important}
+.items-grid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr))!important;gap:8px!important}
+.item-card{padding:8px 4px!important}
+.item-emoji{font-size:30px!important}
+.item-name{font-size:12px!important}
+.input-row{flex-wrap:nowrap!important}
+.input-row label{white-space:nowrap}
+.num-input{flex:1;width:auto!important;min-width:0;height:52px;font-size:22px!important}
+.ok-btn{height:52px;padding:0 18px!important;white-space:nowrap;border-radius:14px!important}
+.input-row .ok-btn:only-child{width:100%}
+.banconote-grid{display:grid!important;grid-template-columns:repeat(3,1fr);gap:10px!important}
+.bill{min-width:0!important;width:100%;height:56px!important;font-size:18px!important}
+.banconota-lbl{display:none!important}
+.pagato-box{gap:8px!important;padding:10px 12px!important}
+.reset-btn{min-height:40px}
+.scontrino{max-width:100%!important;padding:16px!important}
+.pdf-btn{display:none!important}
+.btn-row{padding:0 12px}
+.nuovo-btn{width:100%;height:56px;padding:0!important;font-size:18px!important}
+}</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-wrap">
+    <a href="https://matematichenonsinasce.com/" target="_blank">
+      <div class="logo">
+        <img src="https://raw.githubusercontent.com/rdiianni-alt/quiz-matematica-prima/fca31cdfe65286a5abbf269e23429e4ddc479c78/logo.png" alt="Logo">
+      </div>
+    </a>
+  </div>
+  <div class="game-title">🛒 Spesa al Supermercato</div>
+  <div class="level-btns">
+    <button class="level-btn active" onclick="setLevel(1)">Livello 1 — Prezzi interi</button>
+    <button class="level-btn" onclick="setLevel(2)">Livello 2 — Con i ,50</button>
+    <button class="level-btn" onclick="setLevel(3)">Livello 3 — Con i centesimi</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="score-bar">
+    <div class="score-item">✅ Corrette: <span id="s-ok">0</span></div>
+    <div class="score-item">❌ Errori: <span id="s-err">0</span></div>
+  </div>
+
+  <div class="steps-wrap">
+    <div class="steps">
+      <div class="step-dot active" id="sd1">1</div>
+      <div class="step-line" id="sl1"></div>
+      <div class="step-dot" id="sd2">2</div>
+      <div class="step-line" id="sl2"></div>
+      <div class="step-dot" id="sd3">3</div>
+    </div>
+    <div class="steps-labels">
+      <div class="step-lbl active" id="slbl1">Calcola totale</div>
+      <div class="step-lbl" id="slbl2">Paga</div>
+      <div class="step-lbl" id="slbl3">Calcola resto</div>
+    </div>
+  </div>
+
+  <div class="carrello">
+    <h2>🧺 Articoli nel carrello</h2>
+    <div class="items-grid" id="items-grid"></div>
+  </div>
+
+  <div class="box" id="box-step1">
+    <h2>📝 Step 1 — Quanto spendi in totale?</h2>
+    <div class="input-row">
+      <label>Totale: €</label>
+      <input type="number" id="totale-input" class="num-input" min="0" step="0.01" placeholder="0,00">
+      <button class="ok-btn" onclick="verificaTotale()">Controlla ✓</button>
+    </div>
+    <div class="feedback" id="fb-step1"></div>
+  </div>
+
+  <div class="box disabled" id="box-step2">
+    <h2>💶 Step 2 — Scegli con quali soldi pagare</h2>
+    <div class="banconote-grid" id="banconote-grid"></div>
+    <div class="pagato-box">
+      <div class="pagato-info">Hai dato: <span id="dato-val">€ 0,00</span></div>
+      <div class="pagato-info">Totale: <span id="tot-ref">€ —</span></div>
+      <button class="reset-btn" onclick="resetBanconote()">↺ Azzera</button>
+    </div>
+    <div class="input-row" style="margin-top:8px;">
+      <button class="ok-btn" onclick="confermaPagamento()">Conferma pagamento ✓</button>
+    </div>
+    <div class="feedback" id="fb-step2"></div>
+  </div>
+
+  <div class="box disabled" id="box-step3">
+    <h2>💰 Step 3 — Quanto resto ti daranno in cassa?</h2>
+    <div class="input-row">
+      <label>Resto: €</label>
+      <input type="number" id="resto-input" class="num-input" min="0" step="0.01" placeholder="0,00">
+      <button class="ok-btn" onclick="verificaResto()">Controlla ✓</button>
+    </div>
+    <div class="feedback" id="fb-step3"></div>
+  </div>
+
+  <div class="scontrino" id="scontrino">
+    <div class="s-title">🧾 SCONTRINO</div>
+    <div class="s-sub">Matematiche Non Si Nasce</div>
+    <div id="s-items"></div>
+    <hr class="s-divider">
+    <div class="s-total"><span>TOTALE</span><span id="s-totale"></span></div>
+    <hr class="s-divider">
+    <div class="s-formula">
+      <div>Soldi dati − Totale = Resto</div>
+      <div class="s-op" id="s-operazione"></div>
+    </div>
+    <div class="s-resto"><span>RESTO</span><span id="s-resto"></span></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="nuovo-btn" onclick="nuovoRound()">🔄 Nuova spesa</button>
+    <button class="pdf-btn" onclick="generaPDF()">📄 Genera una scheda</button>
+  </div>
+</div>
+
+<script>
+const PRODOTTI = [
+  {n:'Gelato',e:'🍦'},{n:'Pane',e:'🍞'},{n:'Latte',e:'🥛'},{n:'Mela',e:'🍎'},
+  {n:'Banana',e:'🍌'},{n:'Cioccolato',e:'🍫'},{n:'Succo',e:'🧃'},{n:'Acqua',e:'💧'},
+  {n:'Biscotti',e:'🍪'},{n:'Formaggio',e:'🧀'},{n:'Yogurt',e:'🥣'},{n:'Uova',e:'🥚'},
+  {n:'Pizza',e:'🍕'},{n:'Pasta',e:'🍝'},{n:'Pomodori',e:'🍅'},{n:'Arance',e:'🍊'},
+  {n:'Fragole',e:'🍓'},{n:'Burro',e:'🧈'},{n:'Succo arancia',e:'🍹'},{n:'Miele',e:'🍯'}
+];
+const BANCONOTE=[1,2,5,10,20,50];
+const CLASSI={1:'b1',2:'b2',5:'b5',10:'b10',20:'b20',50:'b50'};
+
+let livello=1, totale=0, datoGiven=0, selBanconote={}, pool=[];
+let scoreOk=0, scoreErr=0, step=1;
+
+function r(n){ return Math.round(n*100)/100; }
+function fmt(n){ return n.toFixed(2).replace('.',','); }
+
+function setLevel(l){
+  livello=l;
+  document.querySelectorAll('.level-btn').forEach((b,i)=>b.classList.toggle('active',i===l-1));
+  nuovoRound();
+}
+
+function prezzoRandom(){
+  let base=Math.floor(Math.random()*9)+1;
+  if(livello===2 && Math.random()<0.6) return base+0.5;
+  if(livello===3){
+    let cent=[0,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90][Math.floor(Math.random()*10)];
+    return r(base+cent);
+  }
+  return base;
+}
+
+function setStep(s){
+  step=s;
+  [1,2,3].forEach(i=>{
+    document.getElementById('sd'+i).className='step-dot'+(i<s?' done':i===s?' active':'');
+    document.getElementById('slbl'+i).className='step-lbl'+(i===s?' active':'');
+    document.getElementById('box-step'+i).classList.toggle('disabled',i>s);
+  });
+  document.getElementById('sl1').className='step-line'+(s>1?' done':'');
+  document.getElementById('sl2').className='step-line'+(s>2?' done':'');
+}
+
+function nuovoRound(){
+  ['fb-step1','fb-step2','fb-step3'].forEach(id=>{
+    let el=document.getElementById(id); el.style.display='none'; el.className='feedback';
+  });
+  document.getElementById('totale-input').value='';
+  document.getElementById('resto-input').value='';
+  document.getElementById('scontrino').style.display='none';
+  resetBanconote(true);
+  setStep(1);
+  let n=[3,5,7][Math.floor(Math.random()*3)];
+  pool=[...PRODOTTI].sort(()=>Math.random()-0.5).slice(0,n);
+  pool.forEach(p=>p.prezzo=prezzoRandom());
+  totale=r(pool.reduce((s,p)=>s+p.prezzo,0));
+  document.getElementById('items-grid').innerHTML=pool.map(p=>`
+    <div class="item-card"><div class="item-emoji">${p.e}</div><div class="item-name">${p.n}</div><div class="item-price">€ ${fmt(p.prezzo)}</div></div>`).join('');
+  document.getElementById('tot-ref').textContent='€ '+fmt(totale);
+  renderBanconote();
+}
+
+function verificaTotale(){
+  let val=parseFloat(document.getElementById('totale-input').value.replace(',','.'));
+  let fb=document.getElementById('fb-step1'); fb.style.display='block';
+  if(isNaN(val)){fb.className='feedback err';fb.textContent='✏️ Inserisci il totale!';return;}
+  if(Math.abs(val-totale)<0.01){
+    fb.className='feedback ok'; fb.textContent='🎉 Esatto! Il totale è € '+fmt(totale)+'. Ora scegli come pagare!';
+    scoreOk++; document.getElementById('s-ok').textContent=scoreOk;
+    setTimeout(()=>setStep(2),800);
+  } else {
+    fb.className='feedback err'; fb.textContent='❌ Non è corretto. Riprova! Somma bene tutti i prezzi.';
+    scoreErr++; document.getElementById('s-err').textContent=scoreErr;
+  }
+}
+
+function renderBanconote(){
+  let html='';
+  BANCONOTE.forEach(v=>{
+    let cls=CLASSI[v], cnt=selBanconote[v]||0;
+    html+=`<div class="banconota"><div class="bill ${cls}" onclick="addBanconota(${v})">€ ${v}
+      ${cnt>0?`<div style="position:absolute;top:-8px;right:-8px;background:#c62828;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">${cnt}</div>`:''}
+    </div><span class="banconota-lbl">tocca per aggiungere</span></div>`;
+  });
+  document.getElementById('banconote-grid').innerHTML=html;
+  document.getElementById('dato-val').textContent='€ '+fmt(datoTotale());
+}
+
+function addBanconota(v){ selBanconote[v]=(selBanconote[v]||0)+1; renderBanconote(); }
+function resetBanconote(silent){ BANCONOTE.forEach(v=>selBanconote[v]=0); datoGiven=0; if(!silent) renderBanconote(); }
+function datoTotale(){ return r(BANCONOTE.reduce((s,v)=>s+v*(selBanconote[v]||0),0)); }
+
+function confermaPagamento(){
+  let dato=datoTotale(), fb=document.getElementById('fb-step2'); fb.style.display='block';
+  if(dato<totale){fb.className='feedback err';fb.textContent='⚠️ Hai dato € '+fmt(dato)+' ma il totale è € '+fmt(totale)+'. Aggiungi ancora qualche soldo!';return;}
+  datoGiven=dato; fb.className='feedback ok'; fb.textContent='✅ Hai dato € '+fmt(dato)+'. Ora calcola il resto!';
+  setTimeout(()=>setStep(3),800);
+}
+
+function verificaResto(){
+  let atteso=r(datoGiven-totale);
+  let ris=parseFloat(document.getElementById('resto-input').value.replace(',','.'));
+  let fb=document.getElementById('fb-step3'); fb.style.display='block';
+  if(isNaN(ris)){fb.className='feedback err';fb.textContent='✏️ Inserisci il resto!';return;}
+  if(Math.abs(ris-atteso)<0.01){
+    scoreOk++; fb.className='feedback ok';
+    fb.textContent='🎉 Ottimo lavoro! Hai dato € '+fmt(datoGiven)+', pagavi € '+fmt(totale)+'. Il resto è € '+fmt(atteso)+'.';
+  } else {
+    scoreErr++; fb.className='feedback err';
+    fb.textContent='❌ Quasi! Hai dato € '+fmt(datoGiven)+', il totale era € '+fmt(totale)+'. Il resto giusto è € '+fmt(atteso)+'.';
+  }
+  document.getElementById('s-ok').textContent=scoreOk;
+  document.getElementById('s-err').textContent=scoreErr;
+  mostraScontrino(atteso);
+}
+
+function mostraScontrino(resto){
+  document.getElementById('s-items').innerHTML=pool.map(p=>`<div class="s-row"><span>${p.e} ${p.n}</span><span>€ ${fmt(p.prezzo)}</span></div>`).join('');
+  document.getElementById('s-totale').textContent='€ '+fmt(totale);
+  document.getElementById('s-operazione').textContent='€ '+fmt(datoGiven)+' − € '+fmt(totale)+' = € '+fmt(resto);
+  document.getElementById('s-resto').textContent='€ '+fmt(resto);
+  let sc=document.getElementById('scontrino'); sc.style.display='block';
+  sc.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+// ---- GENERA PDF ----
+function loadImageAsDataURL(url){
+  return fetch(url)
+    .then(r=>r.blob())
+    .then(blob=>new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onloadend=()=>resolve(reader.result);
+      reader.onerror=reject;
+      reader.readAsDataURL(blob);
+    }));
+}
+
+async function generaPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const livNomi = ['Prezzi interi','Con i ,50','Con i centesimi'];
+  const W=210, M=20, CW=W-M*2;
+  let y=10;
+
+  // Genera articoli
+  let n=[3,5,7][Math.floor(Math.random()*3)];
+  let articoli=[...PRODOTTI].sort(()=>Math.random()-0.5).slice(0,n);
+  articoli.forEach(a=>a.prezzoScheda=prezzoRandom());
+
+  // Logo in cima, accanto al titolo
+  const logoSize = 14;
+  try {
+    const logoData = await loadImageAsDataURL('https://raw.githubusercontent.com/rdiianni-alt/quiz-matematica-prima/fca31cdfe65286a5abbf269e23429e4ddc479c78/logo.png');
+    doc.addImage(logoData, 'PNG', (W-logoSize)/2, y, logoSize, logoSize);
+  } catch(e) { console.error('Logo non caricato', e); }
+  y += logoSize + 4;
+
+  // Intestazione
+  doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(30,100,30);
+  doc.text('Matematiche non si nasce', W/2, y, {align:'center'}); y+=7;
+  doc.setFontSize(16); doc.setTextColor(20,70,20);
+  doc.text('Spesa al Supermercato', W/2, y, {align:'center'}); y+=6;
+  doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(100);
+  doc.text('Livello '+livello+' — '+livNomi[livello-1], W/2, y, {align:'center'}); y+=7;
+
+  // Nome / Classe
+  doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(0);
+  doc.text('Nome:', M, y); doc.line(M+14, y, M+100, y);
+  doc.text('Classe:', M+105, y); doc.line(M+119, y, CW+M, y);
+  y+=12;
+
+  // Articoli in orizzontale
+  doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(30,100,30);
+  doc.text('ARTICOLI NEL CARRELLO', M, y); y+=7;
+  doc.setFont('helvetica','normal'); doc.setTextColor(0); doc.setFontSize(11);
+  let rigaArticoli = articoli.map(a=> a.n+' € '+fmt(a.prezzoScheda)).join('   —   ');
+  let righe = doc.splitTextToSize(rigaArticoli, CW-4);
+  doc.text(righe, M+4, y);
+  y += righe.length * 7 + 8;
+
+  // Linea divisoria
+  doc.setDrawColor(180); doc.setLineWidth(0.3); doc.line(M, y, W-M, y); y+=9;
+
+  const maiusc = livello===1;
+
+  // Domanda 1
+  doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(20,70,20);
+  doc.text(maiusc?'1.  QUANTO SPENDI IN TOTALE?':'1.  Quanto spendi in totale?', M, y); y+=8;
+  doc.setFont('helvetica','normal'); doc.setTextColor(0);
+  doc.text(maiusc?'TOTALE  =  €':'Totale  =  €', M+6, y); doc.line(M+34, y, M+80, y); y+=13;
+
+  // Domanda 2
+  doc.setFont('helvetica','bold'); doc.setTextColor(20,70,20);
+  doc.text(maiusc?'2.  CON QUALI SOLDI SCEGLI DI PAGARE?  (METTI UNA CROCETTA)':'2.  Con quali soldi scegli di pagare?  (metti una crocetta)', M, y); y+=8;
+
+  const SOLDI=[{l:'1 euro'},{l:'2 euro'},{l:'5 euro'},{l:'10 euro'},{l:'20 euro'},{l:'50 euro'}];
+  doc.setFont('helvetica','normal'); doc.setTextColor(0); doc.setFontSize(10);
+  let sx=M+6;
+  SOLDI.forEach(s=>{
+    doc.rect(sx, y-4, 5, 5);
+    doc.text(maiusc?s.l.toUpperCase():s.l, sx+7, y);
+    sx+=29;
+  });
+  y+=11;
+  doc.setFontSize(11);
+  doc.text(maiusc?'HO DATO IN CASSA:  €':'Ho dato in cassa:  €', M+6, y); doc.line(M+56, y, M+95, y); y+=13;
+
+  // Domanda 3
+  doc.setFont('helvetica','bold'); doc.setTextColor(20,70,20);
+  doc.text(maiusc?'3.  QUANTO RESTO TI DARANNO IN CASSA?':'3.  Quanto resto ti daranno in cassa?', M, y); y+=8;
+  doc.setFont('helvetica','normal'); doc.setTextColor(0);
+  doc.text(maiusc?'RESTO  =  €':'Resto  =  €', M+6, y); doc.line(M+34, y, M+80, y); y+=14;
+
+  // Linea tratteggiata divisoria metà pagina
+  doc.setDrawColor(130); doc.setLineWidth(0.5);
+  doc.setLineDashPattern([4,3],0);
+  doc.line(M, y, W-M, y);
+  doc.setLineDashPattern([],0); y+=10;
+
+  // SCONTRINO semplificato
+  doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(30,100,30);
+  doc.text('IL MIO SCONTRINO', W/2, y, {align:'center'}); y+=10;
+
+  doc.setFontSize(12); doc.setFont('helvetica','normal'); doc.setTextColor(0);
+  const rowH = n>=7 ? 7 : 9;
+  articoli.forEach(a=>{
+    doc.text(a.n, M+10, y);
+    doc.text('€ '+fmt(a.prezzoScheda), M+110, y);
+    y+=rowH;
+  });
+  y+=4;
+  doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(M+10, y, M+120, y); y+=7;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(30,100,30);
+  doc.text('TOTALE', M+10, y);
+  doc.setTextColor(0); doc.text('€', M+90, y); doc.line(M+96, y, M+120, y); y+=14;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(160,0,0);
+  doc.text('RESTO', M+10, y);
+  doc.setTextColor(0); doc.text('€', M+90, y); doc.line(M+96, y, M+120, y);
+
+  // Footer testuale fisso in fondo — nessun salto pagina, il logo è già in alto
+  doc.setFontSize(7); doc.setFont('helvetica','italic'); doc.setTextColor(180);
+  doc.text('Matematiche non si nasce', W/2, 292, {align:'center'});
+
+  doc.save('spesa-supermercato-livello'+livello+'.pdf');
+}
+
+nuovoRound();
+</script>
+</body>
+</html>
