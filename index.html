@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icone/icona-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Mate Giochi">
+<meta name="apple-mobile-web-app-title" content="Matematiche non si nasce">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -65,6 +65,8 @@ iframe{flex:1;width:100%;border:0;background:#fff;display:block}
 .steps li::before{counter-increment:s;content:counter(s);flex:none;width:28px;height:28px;border-radius:50%;background:#e8c030;color:#3a2e1e;font-weight:700;display:grid;place-items:center;font-size:14px}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.steps .copy{margin-top:8px;display:inline-block;padding:9px 14px;border-radius:10px;background:#efe6d3;font-weight:600;font-size:14px;color:#3a2e1e}
+.steps .hint{display:block;font-size:14px;color:#6b5a40;margin-top:2px}
 </style>
 </head>
 <body>
@@ -176,20 +178,76 @@ const isStandalone = matchMedia('(display-mode: standalone)').matches || navigat
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isMobile = isIOS || /Android/i.test(navigator.userAgent);
 let deferred = null;
-const STEPS = {
-  ios: ['Tocca il tasto <b>Condividi</b> di Safari (il quadrato con la freccia in su; se non lo vedi, prima i <b>⋯</b>).',
-        'Scorri e scegli <b>Aggiungi alla schermata Home</b>.',
-        'Tocca <b>Aggiungi</b>: l\'icona comparirà tra le tue app.'],
-  android: ['Tocca il menu <b>⋮</b> di Chrome in alto a destra.',
-            'Scegli <b>Installa app</b> (o <b>Aggiungi a schermata Home</b>).',
-            'Conferma con <b>Installa</b>.'],
-  desktop: ['Apri questo indirizzo <b>dal telefono o dal tablet</b>:<br><b style="word-break:break-all">' + location.origin + location.pathname + '</b>',
-            'Poi tocca <b>Installa</b> nel riquadro in alto.']
+const UA = navigator.userAgent;
+const APP_URL = location.origin + location.pathname;
+function detect() {
+  const inApp = /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|Telegram|GSA\//i.test(UA);
+  if (isIOS) {
+    if (inApp) return 'ios-inapp';
+    if (/CriOS/i.test(UA)) return 'ios-chrome';
+    if (/FxiOS/i.test(UA)) return 'ios-firefox';
+    if (/EdgiOS/i.test(UA)) return 'ios-edge';
+    return 'ios-safari';
+  }
+  if (/Android/i.test(UA)) {
+    if (inApp || /; wv\)/.test(UA)) return 'and-inapp';
+    if (/SamsungBrowser/i.test(UA)) return 'and-samsung';
+    if (/Firefox/i.test(UA)) return 'and-firefox';
+    if (/EdgA/i.test(UA)) return 'and-edge';
+    return 'and-chrome';
+  }
+  return 'desktop';
+}
+const copyBtn = '<button type="button" class="copy" onclick="navigator.clipboard&&navigator.clipboard.writeText(APP_URL).then(()=>{this.textContent=\'Indirizzo copiato ✓\'})">Copia l\'indirizzo</button>';
+const GUIDE = {
+  'ios-safari':  ['iPhone e iPad · Safari', [
+    'Tocca il tasto <b>Condividi</b> (il quadrato con la freccia in su). Se non lo vedi, tocca prima i <b>⋯</b> in basso.',
+    'Scorri e scegli <b>Aggiungi alla schermata Home</b>. Se non c\'è, tocca <b>Mostra altro</b>.',
+    'Tocca <b>Aggiungi</b> in alto a destra.']],
+  'ios-chrome':  ['iPhone e iPad · Chrome', [
+    'Tocca il tasto <b>Condividi</b> nella barra dell\'indirizzo, in alto a destra (il quadrato con la freccia in su).',
+    'Scegli <b>Aggiungi alla schermata Home</b>. Se non c\'è, scorri o tocca <b>Altro</b>.',
+    'Tocca <b>Aggiungi</b>.',
+    '<span class="hint">Non trovi la voce? Il tuo iPhone potrebbe essere da aggiornare: apri questa pagina con <b>Safari</b>.</span> ' + copyBtn]],
+  'ios-firefox': ['iPhone e iPad · Firefox', [
+    'Tocca il menu <b>≡</b> in basso a destra.',
+    'Tocca <b>Condividi</b>, poi <b>Aggiungi alla schermata Home</b>.',
+    'Tocca <b>Aggiungi</b>.']],
+  'ios-edge':    ['iPhone e iPad · Edge', [
+    'Tocca il menu <b>⋯</b> in basso al centro, poi <b>Condividi</b>.',
+    'Scegli <b>Aggiungi alla schermata Home</b>.',
+    'Tocca <b>Aggiungi</b>.']],
+  'ios-inapp':   ['Stai usando il browser di un\'altra app', [
+    'Da qui non si può installare. Copia l\'indirizzo: ' + copyBtn,
+    'Apri <b>Safari</b>, incolla l\'indirizzo e vai alla pagina.',
+    'Poi tocca <b>Condividi</b> → <b>Aggiungi alla schermata Home</b>.']],
+  'and-chrome':  ['Android · Chrome', [
+    'Tocca il menu <b>⋮</b> in alto a destra.',
+    'Scegli <b>Installa app</b> (o <b>Aggiungi a schermata Home</b>).',
+    'Conferma con <b>Installa</b>.']],
+  'and-samsung': ['Android · Samsung Internet', [
+    'Tocca il menu <b>≡</b> in basso a destra.',
+    'Scegli <b>Aggiungi pagina a</b> → <b>Schermata Home</b>.',
+    'Conferma con <b>Aggiungi</b>.']],
+  'and-firefox': ['Android · Firefox', [
+    'Tocca il menu <b>⋮</b>.',
+    'Scegli <b>Installa</b> (o <b>Aggiungi a schermata Home</b>).',
+    'Conferma.']],
+  'and-edge':    ['Android · Edge', [
+    'Tocca il menu <b>⋯</b> in basso.',
+    'Scegli <b>Aggiungi al telefono</b> (o <b>Aggiungi a schermata Home</b>).',
+    'Conferma con <b>Installa</b>.']],
+  'and-inapp':   ['Stai usando il browser di un\'altra app', [
+    'Da qui non si può installare. Tocca <b>⋮</b> e scegli <b>Apri in Chrome</b>, oppure copia l\'indirizzo: ' + copyBtn,
+    'In Chrome tocca <b>⋮</b> → <b>Installa app</b>.']],
+  'desktop':     ['Sul telefono o sul tablet', [
+    'Apri questo indirizzo dal telefono o dal tablet:<br><b style="word-break:break-all">' + APP_URL + '</b>',
+    'Segui le istruzioni che compaiono: la pagina riconosce da sola il telefono e il browser.']]
 };
 function openSteps() {
-  const k = isIOS ? 'ios' : isMobile ? 'android' : 'desktop';
-  $('iTitle').textContent = k === 'ios' ? 'Su iPhone e iPad' : k === 'android' ? 'Su Android' : 'Sul telefono';
-  $('iSteps').innerHTML = STEPS[k].map(s => '<li><span>' + s + '</span></li>').join('');
+  const [title, steps] = GUIDE[detect()];
+  $('iTitle').textContent = title;
+  $('iSteps').innerHTML = steps.map(s => '<li><span>' + s + '</span></li>').join('');
   $('iShade').classList.add('on');
 }
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; });
