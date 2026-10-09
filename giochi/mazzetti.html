@@ -82,16 +82,13 @@ button.primary{background:var(--accent);color:var(--accent-ink);border-color:var
 @media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto} }
 </style>
 <style id="app-mobile">
-a[href*="matematichenonsinasce"]{display:none!important}
+a[href*="matematichenonsinasce"],.wrap>a.logo,.wrap>header{display:none!important}
 html{-webkit-text-size-adjust:100%}
 body{-webkit-tap-highlight-color:transparent}
-button,select,input{touch-action:manipulation}
-@media (hover:none){*:hover{transform:none!important}}
-
-.wrap>header{display:none!important}
+button,select,input,label{touch-action:manipulation}
+.pdfcard,.wrap>.note{display:none!important}
 @media (max-width:767px){
 .wrap{padding:10px 10px 28px!important;gap:10px!important}
-.pdfcard,.note{display:none!important}
 .bar{padding:10px 12px!important;gap:6px 12px!important}
 #caption{font-size:14px!important;flex-basis:100%!important;order:3}
 .pausebtn{margin-left:auto;min-height:44px!important}
@@ -103,11 +100,13 @@ form{padding:12px!important;gap:12px!important}
 .seg.ops label.word{font-size:13px!important}
 .fld{flex:1}
 .fld input{width:100%!important;height:52px}
+#go{width:100%;min-height:52px}
 .check{font-size:13px!important}
 .group button{flex:1;min-height:44px}
 .examples{flex-wrap:nowrap!important;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
 .examples button{flex:none}
-}</style>
+}
+</style>
 </head>
 <body>
 
@@ -538,21 +537,30 @@ async function untieOne(){
   const ns=b.items.map(it=>({kind:it.kind,x:cx+it.dx,y:cy+it.dy,rot:it.r,r:rand(-.035,.035),a:1,lift:0}));
   removeFrom(bundles,b); straws.push(...ns);
   await Promise.all([grip(L,0,100),grip(R,0,100)]);
-  say('Allargo le cannucce sciolte sulle unità.');
-  const base=unitsList.length;
+  say(unitsList.length
+    ? `Allargo le 10 cannucce nella seconda riga: sopra restano le ${can(unitsList.length)} che c'erano già.`
+    : 'Allargo le 10 cannucce nella seconda riga delle unità.');
+  // le 10 cannucce del mazzetto slegato vanno tutte nella seconda riga;
+  // quelle che c'erano già restano ferme nella prima riga
   const st=ns.map(s=>({x:s.x,y:s.y,r:s.rot}));
   const lx=L.x, ly=L.y, rx=R.x, ry=R.y;
   await tween(820,t=>{
-    ns.forEach((s,i)=>{const sl=unitSlot(base+i); s.x=lerp(st[i].x,sl.x,t); s.y=lerp(st[i].y,sl.y,t); s.rot=lerp(st[i].r,s.r,t);});
+    ns.forEach((s,i)=>{const sl={x:552+i*34,y:Y1}; s.x=lerp(st[i].x,sl.x,t); s.y=lerp(st[i].y,sl.y,t); s.rot=lerp(st[i].r,s.r,t);});
     L.x=lerp(lx,cx-120,t); L.y=lerp(ly,cy+20,t); R.x=lerp(rx,cx+120,t); R.y=lerp(ry,cy+20,t);
   });
   unitsList.push(...ns); U=unitsList.length; bump('u');
   await Promise.all([home(L,450),home(R,450)]);
 }
+const inTopRow=s=>s.y<(Y0+Y1)/2;
 async function removeStraw(){
-  const s=unitsList[unitsList.length-1];
+  // prima si tolgono le cannucce della prima riga (quelle che c'erano già),
+  // poi quelle della seconda riga (il mazzetto slegato), sempre partendo da destra
+  let idx=-1;
+  for(let i=unitsList.length-1;i>=0;i--){ if(inTopRow(unitsList[i])){ idx=i; break; } }
+  if(idx<0) idx=unitsList.length-1;
+  const s=unitsList[idx];
   await moveHand(R,s.x,s.y,380); await grip(R,.75,90);
-  unitsList.pop(); U=unitsList.length; bump('u'); toTop(straws,s);
+  unitsList.splice(idx,1); U=unitsList.length; bump('u'); toTop(straws,s);
   await carry(R,[s],BOXL.x+rand(-40,40),BOXL.y+rand(-15,15),520,rand(-.25,.25));
   await tween(160,t=>{s.a=1-t;}); removeFrom(straws,s);
   await grip(R,0,80);
@@ -597,11 +605,17 @@ async function add(m){
   const d=Math.floor(m/10), u=m%10;
   say(`Devo aggiungere ${m}: ${dec(d)} e ${u} unità.`); await pause(900);
   for(let k=1;k<=d;k++){ say(`Aggiungo le decine: prendo un mazzetto dalla scatola (${k} di ${d}).`); await addReadyBundle(); }
-  for(let k=1;k<=u;k++){ say(`Aggiungo le unità: ${k} di ${u}.`); await placeStraw(); }
+  // prima si completa la prima riga (la decina), poi le altre vanno nella riga sotto
+  const toFill=Math.min(u,Math.max(0,10-unitsList.length)), rest=u-toFill;
+  for(let k=1;k<=u;k++){
+    if(k<=toFill) say(rest>0?`Completo la prima riga, cioè la decina: ${k} di ${toFill}.`:`Aggiungo le unità: ${k} di ${u}.`);
+    else say(`La prima riga è piena: metto le altre nella riga sotto (${k-toFill} di ${rest}).`);
+    await placeStraw();
+  }
   if(unitsList.length>=10){
     await Promise.all([home(L),home(R)]);
-    say(`Sulle unità ora ci sono ${can(unitsList.length)}: sono più di 9, quindi 10 le posso legare in un mazzetto.`);
-    await pause(1600);
+    // ci si ferma prima di legare: i bambini anticipano il nuovo mazzetto e il risultato
+    await checkpoint('UN NUOVO MAZZETTO!',`Nella prima riga ci sono 10 cannucce: formano un nuovo mazzetto da 10. Secondo voi, quanto farà? Quando siete pronti, premete Riprendi.`);
     await tieTen();
   }
   await Promise.all([home(L),home(R)]);
@@ -612,11 +626,30 @@ async function sub(m){
   for(let k=1;k<=d;k++){ say(`Tolgo un mazzetto da 10: ${k} di ${d}.`); await removeBundle(); }
   if(u){
     if(U<u){
+      const before=U;
       say(`Sulle unità ci sono ${can(U)} sciolte, me ne servono ${u}: slego un mazzetto.`);
       await pause(1100);
       await untieOne();
+      await pause(900);
+      for(let k=1;k<=u;k++){
+        if(k<=before) say(`Tolgo prima le cannucce che c'erano già: ${k} di ${before}.`);
+        else say(`Ora tolgo dal mazzetto slegato: ${k-before} di ${u-before}.`);
+        await removeStraw();
+      }
+      await Promise.all([home(L),home(R)]);
+      const left=unitsList.length;
+      say(left===1
+        ? `Del mazzetto slegato resta ${can(1)}: in tutto ci sono ${dec(D)} e 1 unità.`
+        : `Del mazzetto slegato restano ${can(left)}: in tutto ci sono ${dec(D)} e ${left} unità.`);
+      await pause(2200);
+      // le cannucce rimaste salgono nella prima riga, pronte per un'altra operazione
+      if(left && !unitsList.some(inTopRow)){
+        const st=unitsList.map(s=>({x:s.x,y:s.y}));
+        await tween(700,t=>{unitsList.forEach((s,i)=>{const sl=unitSlot(i); s.x=lerp(st[i].x,sl.x,t); s.y=lerp(st[i].y,sl.y,t);});});
+      }
+    } else {
+      for(let k=1;k<=u;k++){ say(`Tolgo le cannucce sciolte: ${k} di ${u}.`); await removeStraw(); }
     }
-    for(let k=1;k<=u;k++){ say(`Tolgo le cannucce sciolte: ${k} di ${u}.`); await removeStraw(); }
   }
   await Promise.all([home(L),home(R)]);
 }
